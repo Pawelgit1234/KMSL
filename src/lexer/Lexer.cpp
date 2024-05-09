@@ -13,8 +13,27 @@ namespace kmsl
 
 	std::vector<Token> Lexer::scanTokens()
 	{
-		return std::vector<Token>();
+		while (pos_ < code_.length())
+			scanToken();
+
+		return tokens_;
 	}
 
+	void Lexer::scanToken()
+	{
+		for (std::pair<std::string, TokenType> token_type : token_list)
+		{
+			std::regex pattern('^' + token_type.first);
+			std::smatch match;
+			std::string code = code_.substr(pos_);
 
+			if (std::regex_search(code, match, pattern))
+			{
+				pos_ += match.str().length();
+				Token token(token_type.second, match.str(), pos_);
+				if (token.type != TokenType::SPACE)
+					tokens_.push_back(token);
+			}
+		}
+	}
 }
