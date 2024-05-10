@@ -65,6 +65,6 @@ namespace kmsl
         {"\\{", TokenType::LBRACE},
         {"\\}", TokenType::RBRACE},
         {"\\s+", TokenType::SPACE},
-        {"\\n\\r", TokenType::LINE_END}
+        {"\\n|\\r", TokenType::LINE_END}
     };
 }

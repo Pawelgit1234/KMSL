@@ -1,4 +1,4 @@
-#include "Lexer.hpp"
+﻿#include "Lexer.hpp"
 
 namespace kmsl
 {
@@ -15,6 +15,8 @@ namespace kmsl
 	{
 		while (pos_ < code_.length())
 			scanToken();
+
+		tokens_.push_back(Token(TokenType::LINE_END, "\n", pos_ + 1));
 
 		return tokens_;
 	}

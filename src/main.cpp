@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[])
 {
-	std::string code = "a = 3 * 3.34 / 34";
+	std::string code = "a = 3 * 3.34 / 34\n";
 	kmsl::Lexer lexer(code);
 	std::vector<kmsl::Token> tokens = lexer.scanTokens();
 
