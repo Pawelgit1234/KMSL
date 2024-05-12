@@ -134,6 +134,14 @@
     <ClCompile Include="src\utils\Logger.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AST\AssignNode.hpp" />
+    <ClInclude Include="src\AST\AstNode.hpp" />
+    <ClInclude Include="src\AST\BinaryOpNode.hpp" />
+    <ClInclude Include="src\AST\ForNode.hpp" />
+    <ClInclude Include="src\AST\IfNode.hpp" />
+    <ClInclude Include="src\AST\UnarOpNode.hpp" />
+    <ClInclude Include="src\AST\VariableNode.hpp" />
+    <ClInclude Include="src\AST\WhileNode.hpp" />
     <ClInclude Include="src\parser\Parser.hpp" />
     <ClInclude Include="src\lexer\Lexer.hpp" />
     <ClInclude Include="src\token\Token.hpp" />
