@@ -30,6 +30,7 @@ namespace kmsl
         /* Others */
         SPACE,
         LINE_END,
+		INVALID,
 	};
 
 	extern std::unordered_map<std::string, TokenType> token_list;
