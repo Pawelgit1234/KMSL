@@ -18,7 +18,7 @@ namespace kmsl
 		Parser(std::vector<Token> tokens);
 		~Parser();
 
-		std::unique_ptr<AstNode> parse();
+		std::unique_ptr<BlockNode> parse();
 		
 	private:
 		Token match(std::vector<TokenType> types);
@@ -27,10 +27,16 @@ namespace kmsl
 		std::unique_ptr<AstNode> parseExpression();
 		std::unique_ptr<UnarOpNode> parseUnar();
 		std::unique_ptr<AstNode> parseVariable();
-		std::unique_ptr<AstNode> parseTerm();
+		
+		// constructions
 		std::unique_ptr<IfNode> parseIf();
 		std::unique_ptr<ForNode> parseFor();
 		std::unique_ptr<WhileNode> parseWhile();
+
+		// term
+		std::unique_ptr<AstNode> parseTerm();
+		std::unique_ptr<AstNode> parseFactor();
+		std::unique_ptr<AstNode> parsePlusMinus();
 
 		std::vector<Token> tokens_;
 		Token current_token_;

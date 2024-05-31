@@ -3,16 +3,16 @@
 namespace kmsl
 {
 	Parser::Parser(std::vector<Token> tokens)
-		: tokens_(tokens), pos_(0), current_token_(TokenType::INVALID, "", 0) {}
+		: tokens_(tokens), pos_(0), current_token_(tokens_[pos_]) {}
 
 	Parser::~Parser()
 	{
 		tokens_.clear();
 	}
 
-	std::unique_ptr<AstNode> Parser::parse()
+	std::unique_ptr<BlockNode> Parser::parse()
 	{
-		std::unique_ptr<BlockNode> root;
+		std::unique_ptr<BlockNode> root = std::make_unique<BlockNode>();
 
 		while (pos_ < tokens_.size())
 		{
@@ -31,7 +31,7 @@ namespace kmsl
 			auto it = std::find(types.begin(), types.end(), currentToken.type);
 			if (it != types.end())
 			{
-				pos_++;
+				pos_++; // next token if the previous one is right
 				current_token_ = currentToken;
 				return currentToken;
 			}
@@ -90,21 +90,58 @@ namespace kmsl
 		std::unique_ptr<VariableNode> varNode(std::make_unique<VariableNode>(current_token_));
 		if (match({ TokenType::PLUS_ONE, TokenType::MINUS_ONE }).type != TokenType::INVALID)
 		{
-			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(current_token_, varNode));
+			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(current_token_, std::move(varNode)));
 			return unarNode;
 		}
 		else if (match({ TokenType::ASSIGN, TokenType::PLUS_ASSIGN, TokenType::MINUS_ASSIGN, TokenType::MULTIPLY_ASSIGN, TokenType::DIVIDE_ASSIGN, TokenType::MODULO_ASSIGN, TokenType::FLOOR_ASSIGN, TokenType::POWER_ASSIGN, TokenType::ROOT_ASSIGN, TokenType::LOG_ASSIGN, TokenType::BIT_AND_ASSIGN, TokenType::BIT_OR_ASSIGN, TokenType::BIT_XOR_ASSIGN, TokenType::BIT_LEFT_SHIFT_ASSIGN, TokenType::BIT_RIGHT_SHIFT_ASSIGN }).type != TokenType::INVALID)
 		{
-			std::unique_ptr<BinaryOpNode> binarNode(std::make_unique<BinaryOpNode>(current_token_, varNode, parseTerm()));
+			std::unique_ptr<BinaryOpNode> binarNode(std::make_unique<BinaryOpNode>(current_token_, std::move(varNode), std::move(parseTerm())));
 			return binarNode;
 		}
 
 		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
 	}
+
 	std::unique_ptr<AstNode> Parser::parseTerm()
 	{
-		return std::unique_ptr<AstNode>();
+		std::unique_ptr<AstNode> node = parseFactor();
+
+		while (match({ TokenType::MULTIPLY, TokenType::DIVIDE }).type != TokenType::INVALID)
+		{
+			Token token = current_token_;
+			match({ TokenType::MULTIPLY, TokenType::DIVIDE });
+			node = std::make_unique<BinaryOpNode>(token, std::move(node), std::move(parseFactor()));
+		}
+
+		return node;
 	}
+
+	std::unique_ptr<AstNode> Parser::parseFactor()
+	{
+		if (match({ TokenType::LPAR }).type != TokenType::INVALID)
+		{
+			std::unique_ptr<AstNode> node = parsePlusMinus();
+			require({ TokenType::RPAR });
+			return node;
+		}
+		else if (match({ TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL, TokenType::VARIABLE }).type != TokenType::INVALID)
+			return std::make_unique<LiteralNode>(current_token_);
+	}
+
+	std::unique_ptr<AstNode> Parser::parsePlusMinus()
+	{
+		std::unique_ptr<AstNode> node = parseTerm();
+
+		while (match({ TokenType::PLUS, TokenType::MINUS }).type != TokenType::INVALID)
+		{
+			Token token = current_token_;
+			match({ TokenType::PLUS, TokenType::MINUS });
+			node = std::make_unique<BinaryOpNode>(token, std::move(node), std::move(parseTerm()));
+		}
+
+		return node;
+	}
+
 	std::unique_ptr<IfNode> Parser::parseIf()
 	{
 		return std::unique_ptr<IfNode>();
