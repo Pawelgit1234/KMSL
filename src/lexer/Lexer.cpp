@@ -35,7 +35,9 @@ namespace kmsl
 				Token token(token_type.second, match.str(), pos_);
 				if (token.type != TokenType::SPACE)
 					tokens_.push_back(token);
+				return;
 			}
 		}
+		pos_++;
 	}
 }
