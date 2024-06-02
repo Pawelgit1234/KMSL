@@ -13,6 +13,10 @@ namespace kmsl
 		UnarOpNode(const Token& oper, std::unique_ptr<AstNode> node)
 			: op(oper), operand(std::move(node)) {}
 
+		std::string toString() const override
+		{
+			return "UnarOpNode(" + op.text + ", " + operand->toString() + ")";
+		}
 
 		Token op;
 		std::unique_ptr<AstNode> operand;

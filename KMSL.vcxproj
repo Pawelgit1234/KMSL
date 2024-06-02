@@ -140,7 +140,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Intepreter.hpp" />
-    <ClInclude Include="src\AST\AssignNode.hpp" />
     <ClInclude Include="src\AST\ast.hpp" />
     <ClInclude Include="src\AST\AstNode.hpp" />
     <ClInclude Include="src\AST\BinaryOpNode.hpp" />

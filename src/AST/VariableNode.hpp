@@ -11,8 +11,13 @@ namespace kmsl
 	{
 	public:
 		VariableNode(const Token& variable)
-			: var(variable) {}
+			: token(variable) {}
 
-		Token var;
+		std::string toString() const override
+		{
+			return "Variable(" + token.text + ")";
+		}
+
+		Token token;
 	};
 }

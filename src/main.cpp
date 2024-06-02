@@ -7,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-	std::string code = "a = 3 / 34";
+	std::string code = "a = 3 * (4 + 2)";
 	kmsl::Lexer lexer(code);
 	std::vector<kmsl::Token> tokens = lexer.scanTokens();
 
@@ -16,6 +16,8 @@ int main(int argc, char* argv[])
 
 	kmsl::Parser parser(tokens);
 	std::unique_ptr<kmsl::AstNode> root = parser.parse();
+	if (root)
+		std::cout << root->toString() << std::endl;
 
 	return 0;
 }

@@ -13,6 +13,11 @@ namespace kmsl
         IfNode(std::unique_ptr<AstNode> condition, std::unique_ptr<AstNode> thenBranch, std::unique_ptr<AstNode> elseBranch)
             : conditionNode(std::move(condition)), thenBranchNode(std::move(thenBranch)), elseBranchNode(std::move(elseBranch)) {}
 
+        std::string toString() const override
+        {
+            return "If(\n  Condition: " + conditionNode->toString() + ",\n  Then: " + thenBranchNode->toString() + ",\n  Else: " + (elseBranchNode ? elseBranchNode->toString() : "null") + "\n)";
+        }
+
         std::unique_ptr<AstNode> conditionNode;
         std::unique_ptr<AstNode> thenBranchNode;
         std::unique_ptr<AstNode> elseBranchNode;
