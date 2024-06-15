@@ -24,8 +24,7 @@ namespace kmsl
 		Token match(std::vector<TokenType> types);
 		Token require(std::vector<TokenType> types);
 
-		std::unique_ptr<AstNode> parseExpression();
-		std::unique_ptr<UnarOpNode> parseUnar();
+		std::unique_ptr<AstNode> parseLine();
 		std::unique_ptr<AstNode> parseVariable();
 		
 		// constructions
@@ -33,10 +32,8 @@ namespace kmsl
 		std::unique_ptr<ForNode> parseFor();
 		std::unique_ptr<WhileNode> parseWhile();
 
-		// term
+		// formula
 		std::unique_ptr<AstNode> parseTerm();
-		std::unique_ptr<AstNode> parseFactor();
-		std::unique_ptr<AstNode> parsePlusMinus();
 
 		std::vector<Token> tokens_;
 		Token current_token_;

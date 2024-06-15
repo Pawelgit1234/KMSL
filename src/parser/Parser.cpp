@@ -16,7 +16,7 @@ namespace kmsl
 
 		while (pos_ < tokens_.size())
 		{
-			std::unique_ptr<AstNode> codeStringNode = parseExpression();
+			std::unique_ptr<AstNode> codeStringNode = parseLine();
 			require({ TokenType::LINE_END });
 			root->addStatement(std::move(codeStringNode));
 		}
@@ -49,40 +49,37 @@ namespace kmsl
 		return token;
 	}
 
-	std::unique_ptr<AstNode> Parser::parseExpression()
+	std::unique_ptr<AstNode> Parser::parseLine()
 	{
 		if (match({ TokenType::VARIABLE}).type != TokenType::INVALID)
 		{
 			std::unique_ptr<AstNode> varNode = parseVariable();
 			return varNode;
 		}
-		else if (match({ TokenType::PLUS_ONE, TokenType::MINUS_ONE, TokenType::PRINT, TokenType::INPUT }).type != TokenType::INVALID) // Unar
+		else if (match({ TokenType::PLUS_ONE, TokenType::MINUS_ONE }).type != TokenType::INVALID)
 		{
-			std::unique_ptr<AstNode> unarNode = parseUnar();
+			Token oper = current_token_;
+			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, std::make_unique<VariableNode>(require({ TokenType::VARIABLE }))));
 			return unarNode;
+		}
+		else if (match({ TokenType::PRINT, TokenType::INPUT }).type != TokenType::INVALID)
+		{
+			
 		}
 		else if (match({ TokenType::IF }).type != TokenType::INVALID)
 		{
-			std::unique_ptr<AstNode> ifNode = parseIf();
-			return ifNode;
+			
 		}
 		else if (match({ TokenType::FOR }).type != TokenType::INVALID)
 		{
-			std::unique_ptr<AstNode> forNode = parseFor();
-			return forNode;
+			
 		}
 		else if (match({ TokenType::WHILE }).type != TokenType::INVALID)
 		{
-			std::unique_ptr<AstNode> whileNode = parseWhile();
-			return whileNode;
+			
 		}
 		
 		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
-	}
-
-	std::unique_ptr<UnarOpNode> Parser::parseUnar()
-	{
-		return std::unique_ptr<UnarOpNode>();
 	}
 
 	std::unique_ptr<AstNode> Parser::parseVariable()
@@ -103,46 +100,6 @@ namespace kmsl
 		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
 	}
 
-	std::unique_ptr<AstNode> Parser::parseTerm()
-	{
-		std::unique_ptr<AstNode> node = parseFactor();
-
-		while (match({ TokenType::MULTIPLY, TokenType::DIVIDE }).type != TokenType::INVALID)
-		{
-			Token token = current_token_;
-			match({ TokenType::MULTIPLY, TokenType::DIVIDE });
-			node = std::make_unique<BinaryOpNode>(token, std::move(node), std::move(parseFactor()));
-		}
-
-		return node;
-	}
-
-	std::unique_ptr<AstNode> Parser::parseFactor()
-	{
-		if (match({ TokenType::LPAR }).type != TokenType::INVALID)
-		{
-			std::unique_ptr<AstNode> node = parsePlusMinus();
-			require({ TokenType::RPAR });
-			return node;
-		}
-		else if (match({ TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL, TokenType::VARIABLE }).type != TokenType::INVALID)
-			return std::make_unique<LiteralNode>(current_token_);
-	}
-
-	std::unique_ptr<AstNode> Parser::parsePlusMinus()
-	{
-		std::unique_ptr<AstNode> node = parseTerm();
-
-		while (match({ TokenType::PLUS, TokenType::MINUS }).type != TokenType::INVALID)
-		{
-			Token token = current_token_;
-			match({ TokenType::PLUS, TokenType::MINUS });
-			node = std::make_unique<BinaryOpNode>(token, std::move(node), std::move(parseTerm()));
-		}
-
-		return node;
-	}
-
 	std::unique_ptr<IfNode> Parser::parseIf()
 	{
 		return std::unique_ptr<IfNode>();
@@ -154,5 +111,10 @@ namespace kmsl
 	std::unique_ptr<WhileNode> Parser::parseWhile()
 	{
 		return std::unique_ptr<WhileNode>();
+	}
+
+	std::unique_ptr<AstNode> Parser::parseTerm()
+	{
+		return std::unique_ptr<AstNode>();
 	}
 }
