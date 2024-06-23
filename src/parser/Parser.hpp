@@ -34,6 +34,8 @@ namespace kmsl
 
 		// formula
 		std::unique_ptr<AstNode> parseTerm();
+		std::unique_ptr<AstNode> parseFactor();
+		std::unique_ptr<AstNode> parseExpression();
 
 		std::vector<Token> tokens_;
 		Token current_token_;

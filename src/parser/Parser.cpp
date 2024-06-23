@@ -93,7 +93,7 @@ namespace kmsl
 		else if (match({ TokenType::ASSIGN, TokenType::PLUS_ASSIGN, TokenType::MINUS_ASSIGN, TokenType::MULTIPLY_ASSIGN, TokenType::DIVIDE_ASSIGN, TokenType::MODULO_ASSIGN, TokenType::FLOOR_ASSIGN, TokenType::POWER_ASSIGN, TokenType::ROOT_ASSIGN, TokenType::LOG_ASSIGN, TokenType::BIT_AND_ASSIGN, TokenType::BIT_OR_ASSIGN, TokenType::BIT_XOR_ASSIGN, TokenType::BIT_LEFT_SHIFT_ASSIGN, TokenType::BIT_RIGHT_SHIFT_ASSIGN }).type != TokenType::INVALID)
 		{
 			Token assign = current_token_;
-			std::unique_ptr<BinaryOpNode> binarNode(std::make_unique<BinaryOpNode>(assign, std::move(varNode), std::move(parseTerm())));
+			std::unique_ptr<BinaryOpNode> binarNode(std::make_unique<BinaryOpNode>(assign, std::move(varNode), std::move(parseExpression())));
 			return binarNode;
 		}
 
@@ -115,6 +115,43 @@ namespace kmsl
 
 	std::unique_ptr<AstNode> Parser::parseTerm()
 	{
-		return std::unique_ptr<AstNode>();
+		std::unique_ptr<AstNode> node = parseFactor();
+
+		while (match({ TokenType::MULTIPLY, TokenType::DIVIDE }).type != TokenType::INVALID)
+		{
+			Token token = current_token_;
+			match({ TokenType::MULTIPLY, TokenType::DIVIDE });
+			node = std::make_unique<BinaryOpNode>(token, std::move(node), std::move(parseFactor()));
+		}
+
+		return node;
+	}
+
+	std::unique_ptr<AstNode> Parser::parseFactor()
+	{
+		if(match({ TokenType::LPAR }).type != TokenType::INVALID)
+		{
+			std::unique_ptr<AstNode> node = parseExpression();
+			require({ TokenType::RPAR });
+			return node;
+		}
+		else if (match({ TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL, TokenType::VARIABLE }).type != TokenType::INVALID)
+			return std::make_unique<LiteralNode>(current_token_);
+
+		throw std::runtime_error("Incorrect Token");
+	}
+
+	std::unique_ptr<AstNode> Parser::parseExpression()
+	{
+		std::unique_ptr<AstNode> node = parseTerm();
+
+		while (match({ TokenType::PLUS, TokenType::MINUS }).type != TokenType::INVALID)
+		{
+			Token token = current_token_;
+			match({ TokenType::PLUS, TokenType::MINUS });
+			node = std::make_unique<BinaryOpNode>(token, std::move(node), std::move(parseTerm()));
+		}
+
+		return node;
 	}
 }
