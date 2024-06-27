@@ -1,5 +1,5 @@
 #include "Parser.hpp"
-
+#include <iostream>
 namespace kmsl
 {
 	Parser::Parser(std::vector<Token> tokens)
@@ -49,6 +49,21 @@ namespace kmsl
 		return token;
 	}
 
+	void Parser::removeTokensUntil(std::vector<TokenType> remove_types, std::vector<TokenType> stop_types)
+	{
+		auto it = std::find_if(tokens_.begin() + pos_, tokens_.end(), [&](const Token& token) {
+			return std::find(stop_types.begin(), stop_types.end(), token.type) != stop_types.end();
+			});
+
+		int stop_index = std::distance(tokens_.begin(), it);
+
+		for (int i = pos_; i < stop_index; i++)
+		{
+			if (std::find(remove_types.begin(), remove_types.end(), tokens_[i].type) != remove_types.end())
+				tokens_.erase(tokens_.begin() + i);
+		}
+	}
+
 	std::unique_ptr<AstNode> Parser::parseLine()
 	{
 		if (match({ TokenType::VARIABLE}).type != TokenType::INVALID)
@@ -59,16 +74,19 @@ namespace kmsl
 		else if (match({ TokenType::PLUS_ONE, TokenType::MINUS_ONE }).type != TokenType::INVALID)
 		{
 			Token oper = current_token_;
-			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, parseExpression()));
+			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, std::make_unique<VariableNode>(require({ TokenType::VARIABLE }))));
 			return unarNode;
 		}
 		else if (match({ TokenType::PRINT, TokenType::INPUT }).type != TokenType::INVALID)
 		{
-			
+			Token oper = current_token_;
+			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, parseExpression()));
+			return unarNode;
 		}
 		else if (match({ TokenType::IF }).type != TokenType::INVALID)
 		{
-			
+			std::unique_ptr<IfNode> ifNode = parseIf();
+			return ifNode;
 		}
 		else if (match({ TokenType::FOR }).type != TokenType::INVALID)
 		{
@@ -102,8 +120,18 @@ namespace kmsl
 
 	std::unique_ptr<IfNode> Parser::parseIf()
 	{
-		return std::unique_ptr<IfNode>();
+		require({ TokenType::LPAR });
+		removeTokensUntil({ TokenType::LINE_END }, { TokenType::RPAR });
+		std::unique_ptr<AstNode> conditionNode = parseExpression();
+		require({ TokenType::RPAR });
+		removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
+		require({ TokenType::LBRACE});
+		parseLine();
+
+		std::unique_ptr<IfNode> ifNode;
+		return ifNode;
 	}
+
 	std::unique_ptr<ForNode> Parser::parseFor()
 	{
 		return std::unique_ptr<ForNode>();

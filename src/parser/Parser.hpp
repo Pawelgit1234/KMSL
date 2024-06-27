@@ -23,6 +23,7 @@ namespace kmsl
 	private:
 		Token match(std::vector<TokenType> types);
 		Token require(std::vector<TokenType> types);
+		void removeTokensUntil(std::vector<TokenType> remove_types, std::vector<TokenType> stop_types);
 
 		std::unique_ptr<AstNode> parseLine();
 		std::unique_ptr<AstNode> parseVariable();

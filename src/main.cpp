@@ -7,7 +7,8 @@
 
 int main(int argc, char* argv[])
 {
-	std::string code = "a = ! 4";
+	std::string code = "if (a < b &&\n a != b)\n\t{\n\t\ta = 2\n\t}\n\telse if (a == b)\n\t{\n\t\ta = 3\n\t}\n\telse\n\t{\n\t\ta = 4\n\t}";
+
 	kmsl::Lexer lexer(code);
 	std::vector<kmsl::Token> tokens = lexer.scanTokens();
 
