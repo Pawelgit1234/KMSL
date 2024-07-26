@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\semantic\SemanticAnalyzer.cpp" />
     <ClCompile Include="src\Intepreter.cpp" />
     <ClCompile Include="src\parser\Parser.cpp" />
     <ClCompile Include="src\lexer\Lexer.cpp" />
@@ -139,6 +140,7 @@
     <ClCompile Include="src\utils\Logger.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\semantic\SemanticAnalyzer.hpp" />
     <ClInclude Include="src\Intepreter.hpp" />
     <ClInclude Include="src\AST\ast.hpp" />
     <ClInclude Include="src\AST\AstNode.hpp" />
@@ -155,8 +157,10 @@
     <ClInclude Include="src\token\Token.hpp" />
     <ClInclude Include="src\token\TokenType.hpp" />
     <ClInclude Include="src\utils\Logger.hpp" />
+    <ClInclude Include="src\semantic\SymbolTable.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="CMakeLists.txt" />
     <Text Include="todo.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

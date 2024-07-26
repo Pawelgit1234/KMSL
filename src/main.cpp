@@ -7,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-	std::string code = "if (a < b &&\n a != b)\n\t{\n\t\ta = 2\n\t}\n\telse if (a == b)\n\t{\n\t\ta = 3\n\t}\n\telse\n\t{\n\t\ta = 4\n\t}";
+	std::string code = "n = 5\n fact=1\n while(n>0)\n{\nfact *= n\nn--\n}\nprint fact";
 
 	kmsl::Lexer lexer(code);
 	std::vector<kmsl::Token> tokens = lexer.scanTokens();
@@ -17,8 +17,7 @@ int main(int argc, char* argv[])
 
 	kmsl::Parser parser(tokens);
 	std::unique_ptr<kmsl::AstNode> root = parser.parse();
-	if (root)
-		std::cout << root->toString() << std::endl;
+	std::cout << std::endl << root->toString() << std::endl;
 
 	return 0;
 }

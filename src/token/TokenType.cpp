@@ -1,10 +1,9 @@
-#pragma once
-
 #include "TokenType.hpp"
 
 namespace kmsl
 {
     std::unordered_map<std::string, TokenType> token_list = {
+        {",", TokenType::COMMA},
         {"\\^\\^=", TokenType::LOG_ASSIGN},
         {"\\*\\*=", TokenType::POWER_ASSIGN},
         {"\\+\\+=", TokenType::PLUS_ASSIGN},
@@ -49,7 +48,6 @@ namespace kmsl
         {">", TokenType::GREATER_THAN},
         {"=", TokenType::ASSIGN},
         {"if", TokenType::IF},
-        {"elif", TokenType::ELIF},
         {"else", TokenType::ELSE},
         {"while", TokenType::WHILE},
         {"for", TokenType::FOR},

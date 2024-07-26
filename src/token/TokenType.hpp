@@ -8,7 +8,7 @@ namespace kmsl
 	enum class TokenType
 	{
 		/* Keywords */
-		IF, ELIF, ELSE,
+		IF, ELSE,
 		WHILE, FOR, BREAK, CONTINUE,
 		PRINT, INPUT,
 
@@ -31,6 +31,7 @@ namespace kmsl
         SPACE,
         LINE_END,
 		INVALID,
+		COMMA,
 	};
 
 	extern std::unordered_map<std::string, TokenType> token_list;

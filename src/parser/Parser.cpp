@@ -1,4 +1,4 @@
-#include "Parser.hpp"
+﻿#include "Parser.hpp"
 #include <iostream>
 namespace kmsl
 {
@@ -18,7 +18,9 @@ namespace kmsl
 		{
 			std::unique_ptr<AstNode> codeStringNode = parseLine();
 			require({ TokenType::LINE_END });
-			root->addStatement(std::move(codeStringNode));
+
+			if (codeStringNode)
+				root->addStatement(std::move(codeStringNode));
 		}
 		return root;
 	}
@@ -58,10 +60,8 @@ namespace kmsl
 		int stop_index = std::distance(tokens_.begin(), it);
 
 		for (int i = pos_; i < stop_index; i++)
-		{
 			if (std::find(remove_types.begin(), remove_types.end(), tokens_[i].type) != remove_types.end())
 				tokens_.erase(tokens_.begin() + i);
-		}
 	}
 
 	std::unique_ptr<AstNode> Parser::parseLine()
@@ -90,11 +90,18 @@ namespace kmsl
 		}
 		else if (match({ TokenType::FOR }).type != TokenType::INVALID)
 		{
-			
+			std::unique_ptr<ForNode> forNode = parseFor();
+			return forNode;
 		}
 		else if (match({ TokenType::WHILE }).type != TokenType::INVALID)
 		{
-			
+			std::unique_ptr<WhileNode> whileNode = parseWhile();
+			return whileNode;
+		}
+		else if (match({ TokenType::LINE_END }).type != TokenType::INVALID)
+		{
+			pos_--;
+			return nullptr;
 		}
 		
 		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
@@ -103,6 +110,7 @@ namespace kmsl
 	std::unique_ptr<AstNode> Parser::parseVariable()
 	{
 		std::unique_ptr<VariableNode> varNode(std::make_unique<VariableNode>(current_token_));
+
 		if (match({ TokenType::PLUS_ONE, TokenType::MINUS_ONE }).type != TokenType::INVALID)
 		{
 			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(current_token_, std::move(varNode)));
@@ -121,24 +129,121 @@ namespace kmsl
 	std::unique_ptr<IfNode> Parser::parseIf()
 	{
 		require({ TokenType::LPAR });
-		removeTokensUntil({ TokenType::LINE_END }, { TokenType::RPAR });
+		removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
 		std::unique_ptr<AstNode> conditionNode = parseExpression();
 		require({ TokenType::RPAR });
-		removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
 		require({ TokenType::LBRACE});
-		parseLine();
 
-		std::unique_ptr<IfNode> ifNode;
+		std::unique_ptr<BlockNode> thenNode = std::make_unique<BlockNode>();
+		while (match({ TokenType::RBRACE }).type == TokenType::INVALID)
+		{
+			std::unique_ptr<AstNode> codeStringNode = parseLine();
+			require({ TokenType::LINE_END });
+			
+			if (codeStringNode)
+				thenNode->addStatement(std::move(codeStringNode));
+		}
+
+		std::unique_ptr<BlockNode> elseNode = std::make_unique<BlockNode>();
+		
+		bool found = false;
+		for (int i = pos_; i < tokens_.size(); i++)
+		{
+			if (tokens_[i].type == TokenType::ELSE)
+			{
+				found = true;
+				break;
+			}
+
+			if (tokens_[i].type != TokenType::LINE_END)
+				break;
+		}
+
+		if (found)
+		{
+			pos_ += 2;
+			removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
+			require({ TokenType::LBRACE });
+			
+			while (match({ TokenType::RBRACE }).type == TokenType::INVALID)
+			{
+				std::unique_ptr<AstNode> codeStringNode = parseLine();
+				require({ TokenType::LINE_END });
+
+				if (codeStringNode)
+					elseNode->addStatement(std::move(codeStringNode));
+			}
+		}
+
+		std::unique_ptr<IfNode> ifNode = std::make_unique<IfNode>(
+			std::move(conditionNode),
+			std::move(thenNode),
+			std::move(elseNode)
+		);
 		return ifNode;
 	}
 
 	std::unique_ptr<ForNode> Parser::parseFor()
 	{
-		return std::unique_ptr<ForNode>();
+		require({ TokenType::LPAR });
+		removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
+
+		require({ TokenType::VARIABLE });
+		std::unique_ptr<AstNode> initializerNode = parseVariable();
+		require({ TokenType::COMMA });
+		std::unique_ptr<AstNode> conditionNode = parseExpression();
+		require({ TokenType::COMMA });
+		require({ TokenType::VARIABLE });
+		std::unique_ptr<AstNode> incrementNode = parseVariable();
+
+		require({ TokenType::RPAR });
+		require({ TokenType::LBRACE });
+
+		std::unique_ptr<BlockNode> bodyNode = std::make_unique<BlockNode>();
+
+		while (match({ TokenType::RBRACE }).type == TokenType::INVALID)
+		{
+			std::unique_ptr<AstNode> codeStringNode = parseLine();
+			require({ TokenType::LINE_END });
+
+			if (codeStringNode)
+				bodyNode->addStatement(std::move(codeStringNode));
+		}
+
+		std::unique_ptr<ForNode> forNode = std::make_unique<ForNode>(
+			std::move(initializerNode),
+			std::move(conditionNode),
+			std::move(incrementNode),
+			std::move(bodyNode)
+		);
+		return forNode;
 	}
+
 	std::unique_ptr<WhileNode> Parser::parseWhile()
 	{
-		return std::unique_ptr<WhileNode>();
+		require({ TokenType::LPAR });
+		removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
+		std::unique_ptr<AstNode> conditionNode = parseExpression();
+		require({ TokenType::RPAR });
+		require({ TokenType::LBRACE });
+
+		std::unique_ptr<BlockNode> bodyNode = std::make_unique<BlockNode>();
+
+		while (match({ TokenType::RBRACE }).type == TokenType::INVALID)
+		{
+			std::unique_ptr<AstNode> codeStringNode = parseLine();
+			require({ TokenType::LINE_END });
+
+			if (codeStringNode)
+				bodyNode->addStatement(std::move(codeStringNode));
+		}
+
+		std::unique_ptr<WhileNode> whileNode = std::make_unique<WhileNode>(
+			std::move(conditionNode),
+			std::move(bodyNode)
+		);
+
+		return whileNode;
 	}
 
 	std::unique_ptr<AstNode> Parser::parseTerm()
