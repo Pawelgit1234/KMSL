@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 namespace kmsl
 {
@@ -11,7 +12,7 @@ namespace kmsl
 		INT, FLOAT, STRING, BOOL
 	};
 
-	struct Symbol
+	struct Symbol // all symbols are variables, so no category
 	{
 		std::string name;
 		DataType dataType;
@@ -20,14 +21,29 @@ namespace kmsl
 	class SymbolTable
 	{
 	public:
-		void addSymbol(const Symbol& symbol) {symbols_[symbol.name] = symbol; }
-		Symbol* getSymbol(const std::string& name) {
-			auto it = symbols_.find(name);
-			if (it != symbols_.end())
-				return &it->second;
+		SymbolTable() { enterScope(); }
+
+		void enterScope() { scopes_.emplace_back(); }
+		void exitScope() { if (!scopes_.empty()) scopes_.pop_back(); }
+		void addSymbol(const Symbol& symbol)
+		{
+			if (!scopes_.empty())
+				scopes_.back()[symbol.name] = symbol;
+		}
+
+		Symbol* getSymbol(const std::string& name)
+		{
+			for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+				auto symIt = it->find(name);
+				if (symIt != it->end())
+					return &symIt->second;
+			}
 			return nullptr;
 		}
+
+		bool isDeclared(const std::string& name) { return getSymbol(name) != nullptr; }
+
 	private:
-		std::unordered_map<std::string, Symbol> symbols_;
+		std::vector<std::unordered_map<std::string, Symbol>> scopes_;
 	};
 }

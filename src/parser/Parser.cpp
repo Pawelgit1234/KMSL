@@ -273,8 +273,10 @@ namespace kmsl
 			require({ TokenType::RPAR });
 			return node;
 		}
-		else if (match({ TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL, TokenType::VARIABLE }).type != TokenType::INVALID)
+		else if (match({ TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL }).type != TokenType::INVALID)
 			return std::make_unique<LiteralNode>(current_token_);
+		else if (match({ TokenType::VARIABLE }).type != TokenType::INVALID)
+			return std::make_unique<VariableNode>(current_token_);
 
 		throw std::runtime_error("Incorrect Token");
 	}
