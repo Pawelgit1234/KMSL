@@ -2,8 +2,8 @@
 
 namespace kmsl
 {
-    std::unordered_map<std::string, TokenType> token_list = {
-        {",", TokenType::COMMA},
+    std::vector<std::pair<std::string, TokenType>> token_list = {
+        {"\\n|\\r", TokenType::LINE_END},
         {"\\^\\^=", TokenType::LOG_ASSIGN},
         {"\\*\\*=", TokenType::POWER_ASSIGN},
         {"\\+\\+=", TokenType::PLUS_ASSIGN},
@@ -34,6 +34,7 @@ namespace kmsl
         {"!=", TokenType::NOT_EQUALS},
         {"<=", TokenType::LESS_THAN_OR_EQUAL},
         {">=", TokenType::GREATER_THAN_OR_EQUAL},
+        {",", TokenType::COMMA},
         {"\\+", TokenType::PLUS},
         {"\\-", TokenType::MINUS},
         {"\\*", TokenType::MULTIPLY},
@@ -64,7 +65,6 @@ namespace kmsl
         {"\\)", TokenType::RPAR},
         {"\\{", TokenType::LBRACE},
         {"\\}", TokenType::RBRACE},
-        {"\\s+", TokenType::SPACE},
-        {"\\n|\\r", TokenType::LINE_END}
+        {"\\s+", TokenType::SPACE}
     };
 }

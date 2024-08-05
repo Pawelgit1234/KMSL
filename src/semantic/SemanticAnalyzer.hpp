@@ -28,6 +28,9 @@ namespace kmsl
 		void visit(WhileNode* node) override;
 		void visit(LiteralNode* node) override {}
 
+		DataType determineType(AstNode* node);
+		DataType determineBinaryOpType(BinaryOpNode* node);
+
 		SymbolTable symbol_table_;
 	};
 }

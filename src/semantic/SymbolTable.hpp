@@ -9,11 +9,42 @@ namespace kmsl
 {
 	enum class DataType
 	{
-		INT, FLOAT, STRING, BOOL
+		INT, FLOAT, STRING, BOOL, UNDEFINED // UNDEFINED can be created by input for example
 	};
 
 	struct Symbol // all symbols are variables, so no category
 	{
+	public:
+		Symbol() : name(""), dataType(DataType::UNDEFINED) {}
+		Symbol(const std::string& n) : name(n), dataType(DataType::UNDEFINED) {}
+		Symbol (const std::string& n, DataType type) : name(n), dataType(type) {}
+		Symbol(const std::string& n, TokenType type) : name(n), dataType(convertType(type)) {}
+
+		static DataType convertType(TokenType type)
+		{
+			DataType t;
+			switch (type)
+			{
+			case TokenType::INT:
+				t = DataType::INT;
+				break;
+			case TokenType::FLOAT:
+				t = DataType::FLOAT;
+				break;
+			case TokenType::STRING:
+				t = DataType::STRING;
+				break;
+			case TokenType::BOOL:
+				t = DataType::BOOL;
+				break;
+			default:
+				t = DataType::UNDEFINED; 
+				break;
+			}
+
+			return t;
+		}
+
 		std::string name;
 		DataType dataType;
 	};

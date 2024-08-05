@@ -71,13 +71,13 @@ namespace kmsl
 			std::unique_ptr<AstNode> varNode = parseVariable();
 			return varNode;
 		}
-		else if (match({ TokenType::PLUS_ONE, TokenType::MINUS_ONE }).type != TokenType::INVALID)
+		else if (match({ TokenType::PLUS_ONE, TokenType::MINUS_ONE, TokenType::INPUT }).type != TokenType::INVALID)
 		{
 			Token oper = current_token_;
 			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, std::make_unique<VariableNode>(require({ TokenType::VARIABLE }))));
 			return unarNode;
 		}
-		else if (match({ TokenType::PRINT, TokenType::INPUT }).type != TokenType::INVALID)
+		else if (match({ TokenType::PRINT }).type != TokenType::INVALID)
 		{
 			Token oper = current_token_;
 			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, parseExpression()));

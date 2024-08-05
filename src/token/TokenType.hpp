@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <unordered_map>
+#include <vector>
 #include <string>
 
 namespace kmsl
@@ -34,5 +34,5 @@ namespace kmsl
 		COMMA,
 	};
 
-	extern std::unordered_map<std::string, TokenType> token_list;
+	extern std::vector<std::pair<std::string, TokenType>> token_list;
 }
