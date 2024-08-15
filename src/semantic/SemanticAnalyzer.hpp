@@ -4,33 +4,31 @@
 #include <stdexcept>
 
 #include "../AST/ast.hpp"
-#include "../NodeVisitor.hpp"
 #include "SymbolTable.hpp"
 
 namespace kmsl
 {
-	class SemanticAnalyzer : public NodeVisitor
+	class SemanticAnalyzer
 	{
 	public:
-		SemanticAnalyzer();
+		SemanticAnalyzer(std::unique_ptr<BlockNode>& root);
 
-		void analyze(std::unique_ptr<BlockNode>& root);
+		void analyze();
 
 	private:
 		void visitNode(AstNode* node);
-
-		void visit(BlockNode* node) override;
-		void visit(VariableNode* node) override;
-		void visit(UnarOpNode* node) override;
-		void visit(BinaryOpNode* node) override;
-		void visit(IfNode* node) override;
-		void visit(ForNode* node) override;
-		void visit(WhileNode* node) override;
-		void visit(LiteralNode* node) override {}
+		void visit(BlockNode* node);
+		void visit(VariableNode* node);
+		void visit(UnarOpNode* node);
+		void visit(BinaryOpNode* node);
+		void visit(IfNode* node);
+		void visit(ForNode* node);
+		void visit(WhileNode* node);
 
 		DataType determineType(AstNode* node);
 		DataType determineBinaryOpType(BinaryOpNode* node);
 
 		SymbolTable symbol_table_;
+		std::unique_ptr<BlockNode>& root_;
 	};
 }

@@ -140,7 +140,6 @@
     <ClCompile Include="src\utils\Logger.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\NodeVisitor.hpp" />
     <ClInclude Include="src\semantic\SemanticAnalyzer.hpp" />
     <ClInclude Include="src\Intepreter.hpp" />
     <ClInclude Include="src\AST\ast.hpp" />

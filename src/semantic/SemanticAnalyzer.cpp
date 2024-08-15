@@ -4,11 +4,11 @@
 #include <iostream>
 namespace kmsl
 {
-	SemanticAnalyzer::SemanticAnalyzer() : symbol_table_() {}
+	SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<BlockNode>& root) : symbol_table_(), root_(root) {}
 
-	void SemanticAnalyzer::analyze(std::unique_ptr<BlockNode>& root)
+	void SemanticAnalyzer::analyze()
 	{
-		visit(root.get());
+		visit(root_.get());
 	}
 
 	void SemanticAnalyzer::visitNode(AstNode* node)
@@ -28,7 +28,6 @@ namespace kmsl
 		else if (auto whileNode = dynamic_cast<WhileNode*>(node))
 			visit(whileNode);
 	}
-
 
 	void SemanticAnalyzer::visit(BlockNode* node)
 	{
