@@ -230,10 +230,12 @@ namespace kmsl
 				default: throw std::runtime_error("Unsupported assignment operation.");
 				}
 			}
-			else if (std::holds_alternative<float>(value) && std::holds_alternative<float>(valueNode))
+			else if ((std::holds_alternative<int>(value) && std::holds_alternative<float>(valueNode)) ||
+				(std::holds_alternative<float>(value) && std::holds_alternative<int>(valueNode)) ||
+				(std::holds_alternative<float>(value) && std::holds_alternative<float>(valueNode)))
 			{
-				float& var = std::get<float>(value);
-				float val = std::get<float>(valueNode);
+				float var = std::holds_alternative<int>(value) ? static_cast<float>(std::get<int>(value)) : std::get<float>(value);
+				float val = std::holds_alternative<int>(valueNode) ? static_cast<float>(std::get<int>(valueNode)) : std::get<float>(valueNode);
 
 				switch (node->op.type)
 				{
@@ -249,10 +251,12 @@ namespace kmsl
 					break;
 				case TokenType::FLOOR_ASSIGN: var = std::floor(var / val); break;
 				case TokenType::POWER_ASSIGN: var = std::pow(var, val); break;
-				case TokenType::ROOT_ASSIGN: var = std::pow(var, 1.0f / val); break;
-				case TokenType::LOG_ASSIGN: var = std::log(var) / std::log(val); break;
+				case TokenType::ROOT_ASSIGN: if (val <= 0.0f) throw std::runtime_error("Root degree must be greater than 0."); var = std::pow(var, 1.0f / val); break;
+				case TokenType::LOG_ASSIGN: if (var <= 0.0f || val <= 0.0f) throw std::runtime_error("Logarithm base and argument must be greater than 0."); var = std::log(var) / std::log(val); break;
 				default: throw std::runtime_error("Unsupported assignment operation for float.");
 				}
+
+				variables_[variableNode->token.text] = var;
 			}
 			else if (std::holds_alternative<std::string>(value) && std::holds_alternative<std::string>(valueNode))
 			{
@@ -334,10 +338,12 @@ namespace kmsl
 					return static_cast<int>(std::pow(left, 1.0 / right));
 				}
 			}
-			else if (std::holds_alternative<float>(leftValue) && std::holds_alternative<float>(rightValue))
+			else if (std::holds_alternative<float>(leftValue) && std::holds_alternative<float>(rightValue)||
+				(std::holds_alternative<int>(leftValue) && std::holds_alternative<float>(rightValue)) ||
+				(std::holds_alternative<float>(leftValue) && std::holds_alternative<int>(rightValue)))
 			{
-				float left = std::get<float>(leftValue);
-				float right = std::get<float>(rightValue);
+				float left = std::holds_alternative<int>(leftValue) ? static_cast<float>(std::get<int>(leftValue)) : std::get<float>(leftValue);
+				float right = std::holds_alternative<int>(rightValue) ? static_cast<float>(std::get<int>(rightValue)) : std::get<float>(rightValue);
 
 				switch (node->op.type)
 				{

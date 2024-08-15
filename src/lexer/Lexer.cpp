@@ -47,7 +47,11 @@ namespace kmsl
                 pos_ += matched_str.length();
                 Token token(token_type.second, matched_str, pos_);
                 if (token.type != TokenType::SPACE)
+                {
+                    if (token.type == TokenType::STRING) // removing the "" from the string
+                        token.text = token.text.substr(1, token.text.length() - 2);
                     tokens_.push_back(token);
+                }
                 return;
             }
         }
