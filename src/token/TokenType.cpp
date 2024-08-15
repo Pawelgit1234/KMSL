@@ -65,6 +65,17 @@ namespace kmsl
         {"\\)", TokenType::RPAR},
         {"\\{", TokenType::LBRACE},
         {"\\}", TokenType::RBRACE},
-        {"\\s+", TokenType::SPACE}
+        {"\\s+", TokenType::SPACE},
+        {"move", TokenType::MOVE},
+        {"dmove", TokenType::DMOVE},
+        {"scroll", TokenType::SCROLL},
+        {"drag", TokenType::DRAG},
+        {"type", TokenType::TYPE},
+        {"press", TokenType::PRESS},
+        {"hold", TokenType::HOLD},
+        {"release", TokenType::RELEASE},
+        {"state", TokenType::STATE},
+        {"wait", TokenType::WAIT},
+        {"#.*(?=\\n|$)", TokenType::COMMENT}
     };
 }

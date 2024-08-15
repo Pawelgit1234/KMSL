@@ -12,6 +12,9 @@ namespace kmsl
 		WHILE, FOR, BREAK, CONTINUE,
 		PRINT, INPUT,
 
+		/* Mouse & Keyboard */
+		MOVE, DMOVE, SCROLL, DRAG, TYPE, PRESS, HOLD, RELEASE,
+		
 		/* Operators */
 		PLUS, MINUS, MULTIPLY, DIVIDE, FLOOR, MODULO, ROOT, LOG, POWER, PLUS_ONE, MINUS_ONE,
 		BIT_AND, BIT_OR, BIT_XOR, BIT_NOT, BIT_LEFT_SHIFT, BIT_RIGHT_SHIFT,
@@ -28,10 +31,10 @@ namespace kmsl
 		STRING,
 
         /* Others */
-        SPACE,
-        LINE_END,
+        SPACE, LINE_END, COMMENT,
 		INVALID,
 		COMMA,
+		STATE, WAIT
 	};
 
 	extern std::vector<std::pair<std::string, TokenType>> token_list;

@@ -12,7 +12,7 @@ namespace kmsl
             if (ch == '\n')
                 modified_code += ' ';
         }
-        code_ = modified_code;
+        code_ = modified_code + '\n';
     }
 
     Lexer::~Lexer()
@@ -25,8 +25,6 @@ namespace kmsl
     {
         while (pos_ < code_.length())
             scanToken();
-
-        tokens_.push_back(Token(TokenType::LINE_END, "\n", pos_ + 1));
 
         return tokens_;
     }
@@ -46,7 +44,10 @@ namespace kmsl
                 std::string matched_str = match.str(0);
                 pos_ += matched_str.length();
                 Token token(token_type.second, matched_str, pos_);
-                if (token.type != TokenType::SPACE)
+
+                if (token.type == TokenType::COMMENT)
+                    tokens_.push_back(Token(TokenType::LINE_END, "\n", pos_));
+                else if (token.type != TokenType::SPACE)
                 {
                     if (token.type == TokenType::STRING) // removing the "" from the string
                         token.text = token.text.substr(1, token.text.length() - 2);
