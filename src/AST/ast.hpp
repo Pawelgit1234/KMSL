@@ -9,3 +9,6 @@
 #include "UnarOpNode.hpp"
 #include "VariableNode.hpp"
 #include "WhileNode.hpp"
+#include "MouseNode.hpp"
+#include "PressNode.hpp"
+#include "HoldReleaseNode.hpp"

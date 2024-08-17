@@ -69,7 +69,6 @@ namespace kmsl
         {"move", TokenType::MOVE},
         {"dmove", TokenType::DMOVE},
         {"scroll", TokenType::SCROLL},
-        {"drag", TokenType::DRAG},
         {"type", TokenType::TYPE},
         {"press", TokenType::PRESS},
         {"hold", TokenType::HOLD},
