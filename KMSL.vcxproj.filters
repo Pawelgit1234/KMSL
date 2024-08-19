@@ -92,7 +92,10 @@
     <ClInclude Include="src\semantic\SymbolTable.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\AST\MoveNode.hpp">
+    <ClInclude Include="src\AST\MouseNode.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AST\KeyNode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

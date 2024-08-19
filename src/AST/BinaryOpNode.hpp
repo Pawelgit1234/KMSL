@@ -15,7 +15,14 @@ namespace kmsl
 
 		std::string toString() const override
 		{
-			return "BinaryOpNode(" + op.text + ", " + leftOperand->toString() + ", " + rightOperand->toString() + ")";
+			std::string result = "BinaryOpNode(" + op.text + ", " + leftOperand->toString();
+			
+			if (rightOperand)
+				result += ", " + rightOperand->toString() + ")";
+			else
+				result += ", nullptr)";
+
+			return result;
 		}
 
 		Token op;

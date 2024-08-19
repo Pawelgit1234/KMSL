@@ -103,6 +103,28 @@ namespace kmsl
 			pos_--;
 			return nullptr;
 		}
+		else if (match({ TokenType::MOVE, TokenType::DMOVE, TokenType::SCROLL }).type != TokenType::INVALID)
+		{
+			std::unique_ptr<MouseNode> mouseNode = parseMouse();
+			return mouseNode;
+		}
+		else if (match({ TokenType::TYPE }).type != TokenType::INVALID)
+		{
+			std::unique_ptr<BinaryOpNode> typeNode = parseType();
+			return typeNode;
+		}
+		else if (match({ TokenType::HOLD, TokenType::RELEASE, TokenType::PRESS }).type != TokenType::INVALID)
+		{
+			TokenType type = current_token_.type;
+			std::unique_ptr<KeyNode> keyNode(std::make_unique<KeyNode>(type, parseArguments()));
+			return keyNode;
+		}
+		else if (match({ TokenType::STATE, TokenType::WAIT }).type != TokenType::INVALID)
+		{
+			Token oper = current_token_;
+			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, std::make_unique<LiteralNode>(require({ TokenType::VARIABLE, TokenType::STRING, TokenType::FLOAT, TokenType::INT }))));
+			return unarNode;
+		}
 		
 		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
 	}
@@ -126,6 +148,58 @@ namespace kmsl
 		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
 	}
 
+	std::unique_ptr<MouseNode> Parser::parseMouse()
+	{
+		TokenType type = current_token_.type;
+		std::unique_ptr<AstNode> x = parseExpression();
+		require({ TokenType::COMMA });
+		std::unique_ptr<AstNode> y = parseExpression();
+		std::unique_ptr<AstNode> t;
+
+		if (match({ TokenType::COMMA }).type != TokenType::INVALID)
+			t = parseExpression();
+
+		std::unique_ptr<MouseNode> mouseNode = std::make_unique<MouseNode>(
+			type,
+			std::move(x),
+			std::move(y),
+			std::move(t)
+		);
+
+		return mouseNode;
+	}
+
+	std::unique_ptr<BinaryOpNode> Parser::parseType()
+	{
+
+		Token token = current_token_;
+		std::unique_ptr<AstNode> text = parseExpression();
+		std::unique_ptr<AstNode> t;
+
+		if (match({ TokenType::COMMA }).type != TokenType::INVALID)
+			t = parseExpression();
+
+
+		std::unique_ptr<BinaryOpNode> typeNode = std::make_unique<BinaryOpNode>(
+			token,
+			std::move(text),
+			std::move(t)
+		);
+
+		return typeNode;
+	}
+
+	std::vector<std::unique_ptr<AstNode>> Parser::parseArguments()
+	{
+		std::vector<std::unique_ptr<AstNode>> arguments;
+
+		do {
+			arguments.push_back(parseExpression());
+		} while (match({ TokenType::COMMA }).type != TokenType::INVALID);
+
+		return arguments;
+	}
+
 	std::unique_ptr<IfNode> Parser::parseIf()
 	{
 		require({ TokenType::LPAR });
@@ -145,21 +219,8 @@ namespace kmsl
 		}
 
 		std::unique_ptr<BlockNode> elseNode = std::make_unique<BlockNode>();
-		
-		bool found = false;
-		for (int i = pos_; i < tokens_.size(); i++)
-		{
-			if (tokens_[i].type == TokenType::ELSE)
-			{
-				found = true;
-				break;
-			}
 
-			if (tokens_[i].type != TokenType::LINE_END)
-				break;
-		}
-
-		if (found)
+		if (match({ TokenType::ELSE }).type != TokenType::INVALID)
 		{
 			pos_ += 2;
 			removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });

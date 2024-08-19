@@ -9,7 +9,7 @@ namespace kmsl
     class MouseNode : public AstNode
     {
     public:
-        MouseNode(TokenType t, std::unique_ptr<AstNode> x, std::unique_ptr<AstNode> y, std::unique_ptr<AstNode> time=nullptr)
+        MouseNode(TokenType t, std::unique_ptr<AstNode> x, std::unique_ptr<AstNode> y, std::unique_ptr<AstNode> time)
             : token_type(t), xNode(std::move(x)), yNode(std::move(y)), tNode(std::move(time)) {}
 
         std::string toString() const override
@@ -34,6 +34,9 @@ namespace kmsl
 
             case TokenType::SCROLL:
                 result = "Scroll(" + xNode->toString() + ", " + yNode->toString() + ")";
+                if (tNode)
+                    result += ", " + tNode->toString();
+                result += ")";
                 break;
 
             default:

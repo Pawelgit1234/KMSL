@@ -27,6 +27,10 @@ namespace kmsl
 			visit(forNode);
 		else if (auto whileNode = dynamic_cast<WhileNode*>(node))
 			visit(whileNode);
+		else if (auto keyNode = dynamic_cast<KeyNode*>(node))
+			visit(keyNode);
+		else if (auto mouseNode = dynamic_cast<MouseNode*>(node))
+			visit(mouseNode);
 	}
 
 	void SemanticAnalyzer::visit(BlockNode* node)
@@ -48,7 +52,7 @@ namespace kmsl
 	{
 		TokenType op = node->op.type;
 		
-		if (op == TokenType::PLUS_ONE || op == TokenType::MINUS_ONE || op == TokenType::PRINT || op == TokenType::PLUS || op == TokenType::MINUS || op == TokenType::LOGICAL_NOT || op == TokenType::BIT_NOT)
+		if (op == TokenType::PLUS_ONE || op == TokenType::MINUS_ONE || op == TokenType::PRINT || op == TokenType::PLUS || op == TokenType::MINUS || op == TokenType::LOGICAL_NOT || op == TokenType::BIT_NOT || op == TokenType::WAIT || op == TokenType::STATE)
 			visitNode(node->operand.get());
 		else if (op == TokenType::INPUT)
 		{
@@ -127,6 +131,7 @@ namespace kmsl
 		case TokenType::GREATER_THAN_OR_EQUAL:
 		case TokenType::EQUALS:
 		case TokenType::NOT_EQUALS:
+		case TokenType::TYPE:
 			visitNode(node->leftOperand.get());
 			visitNode(node->rightOperand.get());
 			break;
@@ -153,6 +158,19 @@ namespace kmsl
 	{
 		if (determineType(node->conditionNode.get()) != DataType::BOOL) std::runtime_error("The condition in while should be a boolean expression!");
 		visit(dynamic_cast<BlockNode*>(node->bodyNode.get()));
+	}
+
+	void SemanticAnalyzer::visit(KeyNode* node)
+	{
+		for (const auto& b : node->buttonNodes)
+			visitNode(b.get());
+	}
+
+	void SemanticAnalyzer::visit(MouseNode* node)
+	{
+		visitNode(node->xNode.get());
+		visitNode(node->yNode.get());
+		visitNode(node->tNode.get());
 	}
 
 	DataType SemanticAnalyzer::determineType(AstNode* node)

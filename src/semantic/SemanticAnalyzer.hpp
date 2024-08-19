@@ -24,6 +24,8 @@ namespace kmsl
 		void visit(IfNode* node);
 		void visit(ForNode* node);
 		void visit(WhileNode* node);
+		void visit(KeyNode* node);
+		void visit(MouseNode* node);
 
 		DataType determineType(AstNode* node);
 		DataType determineBinaryOpType(BinaryOpNode* node);

@@ -3,6 +3,15 @@
 namespace kmsl
 {
     std::vector<std::pair<std::string, TokenType>> token_list = {
+        {"move", TokenType::MOVE},
+        {"dmove", TokenType::DMOVE},
+        {"scroll", TokenType::SCROLL},
+        {"type", TokenType::TYPE},
+        {"press", TokenType::PRESS},
+        {"hold", TokenType::HOLD},
+        {"release", TokenType::RELEASE},
+        {"state", TokenType::STATE},
+        {"wait", TokenType::WAIT},
         {"\\n|\\r", TokenType::LINE_END},
         {"\\^\\^=", TokenType::LOG_ASSIGN},
         {"\\*\\*=", TokenType::POWER_ASSIGN},
@@ -66,15 +75,6 @@ namespace kmsl
         {"\\{", TokenType::LBRACE},
         {"\\}", TokenType::RBRACE},
         {"\\s+", TokenType::SPACE},
-        {"move", TokenType::MOVE},
-        {"dmove", TokenType::DMOVE},
-        {"scroll", TokenType::SCROLL},
-        {"type", TokenType::TYPE},
-        {"press", TokenType::PRESS},
-        {"hold", TokenType::HOLD},
-        {"release", TokenType::RELEASE},
-        {"state", TokenType::STATE},
-        {"wait", TokenType::WAIT},
         {"#.*(?=\\n|$)", TokenType::COMMENT}
     };
 }
