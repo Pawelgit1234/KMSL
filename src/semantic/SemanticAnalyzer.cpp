@@ -132,6 +132,7 @@ namespace kmsl
 		case TokenType::EQUALS:
 		case TokenType::NOT_EQUALS:
 		case TokenType::TYPE:
+		case TokenType::SCROLL:
 			visitNode(node->leftOperand.get());
 			visitNode(node->rightOperand.get());
 			break;

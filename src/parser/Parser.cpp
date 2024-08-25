@@ -103,14 +103,14 @@ namespace kmsl
 			pos_--;
 			return nullptr;
 		}
-		else if (match({ TokenType::MOVE, TokenType::DMOVE, TokenType::SCROLL }).type != TokenType::INVALID)
+		else if (match({ TokenType::MOVE, TokenType::DMOVE }).type != TokenType::INVALID)
 		{
 			std::unique_ptr<MouseNode> mouseNode = parseMouse();
 			return mouseNode;
 		}
-		else if (match({ TokenType::TYPE }).type != TokenType::INVALID)
+		else if (match({ TokenType::TYPE, TokenType::SCROLL }).type != TokenType::INVALID)
 		{
-			std::unique_ptr<BinaryOpNode> typeNode = parseType();
+			std::unique_ptr<BinaryOpNode> typeNode = parseTypeAndScroll();
 			return typeNode;
 		}
 		else if (match({ TokenType::HOLD, TokenType::RELEASE, TokenType::PRESS }).type != TokenType::INVALID)
@@ -169,11 +169,11 @@ namespace kmsl
 		return mouseNode;
 	}
 
-	std::unique_ptr<BinaryOpNode> Parser::parseType()
+	std::unique_ptr<BinaryOpNode> Parser::parseTypeAndScroll()
 	{
 
 		Token token = current_token_;
-		std::unique_ptr<AstNode> text = parseExpression();
+		std::unique_ptr<AstNode> left = parseExpression();
 		std::unique_ptr<AstNode> t;
 
 		if (match({ TokenType::COMMA }).type != TokenType::INVALID)
@@ -182,7 +182,7 @@ namespace kmsl
 
 		std::unique_ptr<BinaryOpNode> typeNode = std::make_unique<BinaryOpNode>(
 			token,
-			std::move(text),
+			std::move(left),
 			std::move(t)
 		);
 

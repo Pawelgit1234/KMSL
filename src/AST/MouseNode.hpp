@@ -32,13 +32,6 @@ namespace kmsl
                 result += ")";
                 break;
 
-            case TokenType::SCROLL:
-                result = "Scroll(" + xNode->toString() + ", " + yNode->toString() + ")";
-                if (tNode)
-                    result += ", " + tNode->toString();
-                result += ")";
-                break;
-
             default:
                 result = "UnknownMouseAction()";
                 break;
@@ -47,7 +40,7 @@ namespace kmsl
             return result;
         }
 
-        TokenType token_type; // move, dmove or scroll
+        TokenType token_type; // move or dmove 
         std::unique_ptr<AstNode> xNode;
         std::unique_ptr<AstNode> yNode;
         std::unique_ptr<AstNode> tNode;

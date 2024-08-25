@@ -28,7 +28,7 @@ namespace kmsl
 		std::unique_ptr<AstNode> parseLine();
 		std::unique_ptr<AstNode> parseVariable();
 		std::unique_ptr<MouseNode> parseMouse();
-		std::unique_ptr<BinaryOpNode> parseType();
+		std::unique_ptr<BinaryOpNode> parseTypeAndScroll();
 		std::vector<std::unique_ptr<AstNode>> parseArguments();
 		
 		// constructions
