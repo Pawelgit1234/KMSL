@@ -11,8 +11,6 @@
 #include <chrono>
 #include <thread>
 
-WORD getVirtualKeyCode(const std::string& key);
-
 namespace kmsl
 {
 	class IoController
@@ -26,6 +24,11 @@ namespace kmsl
 		static void hold(const std::vector<std::string>& buttons);
 		static void release(const std::vector<std::string>& buttons);
 		static bool getState(const std::string& button);
+
+	private:
+		static WORD getVirtualKeyCode(const std::string& key);
+		static INPUT createKeyboardInput(WORD keyCode, DWORD dwFlags);
+		static INPUT createMouseInput(WORD keyCode, DWORD dwFlags);
 	};
 }
 

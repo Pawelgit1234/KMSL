@@ -13,6 +13,7 @@
 #include "token/Token.hpp"
 #include "semantic/SemanticAnalyzer.hpp"
 #include "semantic/SymbolTable.hpp"
+#include "io/IoController.hpp"
 
 using variant = std::variant<bool, int, float, std::string>;
 
@@ -36,6 +37,8 @@ namespace kmsl
 		variant visit(ForNode* node);
 		variant visit(WhileNode* node);
 		variant visit(LiteralNode* node);
+		variant visit(KeyNode* node);
+		variant visit(MouseNode* node);
 
 		std::unordered_map<std::string, variant> variables_;
 		std::unique_ptr<BlockNode> root_;

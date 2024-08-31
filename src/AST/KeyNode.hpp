@@ -39,6 +39,6 @@ namespace kmsl
         }
 
         TokenType token_type; // HOLD, RELEASE or PRESS
-        std::vector<std::unique_ptr<AstNode>> buttonNodes;
+        std::vector<std::unique_ptr<AstNode>> buttonNodes; // t is at the last element
     };
 }

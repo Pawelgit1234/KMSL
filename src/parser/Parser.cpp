@@ -119,7 +119,7 @@ namespace kmsl
 			std::unique_ptr<KeyNode> keyNode(std::make_unique<KeyNode>(type, parseArguments()));
 			return keyNode;
 		}
-		else if (match({ TokenType::STATE, TokenType::WAIT }).type != TokenType::INVALID)
+		else if (match({ TokenType::WAIT }).type != TokenType::INVALID)
 		{
 			Token oper = current_token_;
 			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, std::make_unique<LiteralNode>(require({ TokenType::VARIABLE, TokenType::STRING, TokenType::FLOAT, TokenType::INT }))));
@@ -338,6 +338,12 @@ namespace kmsl
 			return std::make_unique<LiteralNode>(current_token_);
 		else if (match({ TokenType::VARIABLE }).type != TokenType::INVALID)
 			return std::make_unique<VariableNode>(current_token_);
+		else if (match({ TokenType::STATE }).type != TokenType::INVALID)
+		{
+			Token stateToken = current_token_;
+			require({ TokenType::STRING });
+			return std::make_unique<UnarOpNode>(stateToken, std::make_unique<LiteralNode>(current_token_));
+		}
 
 		throw std::runtime_error("Incorrect Token");
 	}
