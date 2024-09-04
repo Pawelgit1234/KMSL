@@ -45,12 +45,16 @@ namespace kmsl
                 pos_ += matched_str.length();
                 Token token(token_type.second, matched_str, pos_);
 
-                if (token.type == TokenType::COMMENT)
-                    tokens_.push_back(Token(TokenType::LINE_END, "\n", pos_));
-                else if (token.type != TokenType::SPACE)
+                
+                if (token.type != TokenType::SPACE || token.type == TokenType::COMMENT)
                 {
-                    if (token.type == TokenType::STRING) // removing the "" from the string
+                    if (token.type == TokenType::STRING) // removing the ""/'' from the string
                         token.text = token.text.substr(1, token.text.length() - 2);
+                    else if (token.text == "TRUE")
+                        token.text = "true";
+                    else if (token.text == "FALSE")
+                        token.text = "false";
+                        
                     tokens_.push_back(token);
                 }
                 return;
