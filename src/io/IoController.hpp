@@ -24,6 +24,7 @@ namespace kmsl
 		static void hold(const std::vector<std::string>& buttons);
 		static void release(const std::vector<std::string>& buttons);
 		static bool getState(const std::string& button);
+		static void getMouseCoordinates(int& x, int& y);
 
 	private:
 		static WORD getVirtualKeyCode(const std::string& key);

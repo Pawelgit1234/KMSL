@@ -26,11 +26,14 @@ namespace kmsl
 		void visit(WhileNode* node);
 		void visit(KeyNode* node);
 		void visit(MouseNode* node);
+		void visit(CommandNode* node);
 
 		DataType determineType(AstNode* node);
 		DataType determineBinaryOpType(BinaryOpNode* node);
 
 		SymbolTable symbol_table_;
 		std::unique_ptr<BlockNode>& root_;
+
+		bool insideLoop_;
 	};
 }

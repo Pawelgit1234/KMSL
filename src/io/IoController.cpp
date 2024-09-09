@@ -158,6 +158,16 @@ namespace kmsl
         return false;
     }
 
+    void IoController::getMouseCoordinates(int& x, int& y)
+    {
+        POINT p;
+        if (GetCursorPos(&p))
+        {
+            x = p.x;
+            y = p.y;
+        }
+    }
+
     WORD IoController::getVirtualKeyCode(const std::string& key)
     {
         static std::map<std::string, WORD> keyMap = {

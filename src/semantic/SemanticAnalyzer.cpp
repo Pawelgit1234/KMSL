@@ -31,6 +31,8 @@ namespace kmsl
 			visit(keyNode);
 		else if (auto mouseNode = dynamic_cast<MouseNode*>(node))
 			visit(mouseNode);
+		else if (auto commandNode = dynamic_cast<CommandNode*>(node))
+			visit(commandNode);
 	}
 
 	void SemanticAnalyzer::visit(BlockNode* node)
@@ -44,8 +46,9 @@ namespace kmsl
 
 	void SemanticAnalyzer::visit(VariableNode* node)
 	{
-		if (!symbol_table_.isDeclared(node->token.text))
-			throw std::runtime_error("The variable" + node->token.text + "is not existing!");
+		if (node->token.type != TokenType::GETX && node->token.type != TokenType::GETY) 
+			if (!symbol_table_.isDeclared(node->token.text)) 
+				throw std::runtime_error("The variable " + node->token.text + " is not existing!");
 	}
 
 	void SemanticAnalyzer::visit(UnarOpNode* node)
@@ -149,16 +152,26 @@ namespace kmsl
 
 	void SemanticAnalyzer::visit(ForNode* node)
 	{
+		bool wasInsideLoop = insideLoop_;
+		insideLoop_ = true;
+
 		visitNode(node->initializerNode.get());
 		if (determineType(node->conditionNode.get()) != DataType::BOOL) std::runtime_error("The condition in for should be a boolean expression!");
 		visitNode(node->incrementNode.get());
 		visit(dynamic_cast<BlockNode*>(node->bodyNode.get()));
+
+		insideLoop_ = wasInsideLoop;
 	}
 
 	void SemanticAnalyzer::visit(WhileNode* node)
 	{
+		bool wasInsideLoop = insideLoop_;
+		insideLoop_ = true;
+
 		if (determineType(node->conditionNode.get()) != DataType::BOOL) std::runtime_error("The condition in while should be a boolean expression!");
 		visit(dynamic_cast<BlockNode*>(node->bodyNode.get()));
+
+		insideLoop_ = wasInsideLoop;
 	}
 
 	void SemanticAnalyzer::visit(KeyNode* node)
@@ -172,6 +185,15 @@ namespace kmsl
 		visitNode(node->xNode.get());
 		visitNode(node->yNode.get());
 		visitNode(node->tNode.get());
+	}
+
+	void SemanticAnalyzer::visit(CommandNode* node)
+	{
+		if (node->type == TokenType::BREAK || node->type == TokenType::CONTINUE)
+		{
+			if (!insideLoop_)
+				throw std::runtime_error("Break/Continue statement is not inside a loop!");
+		}
 	}
 
 	DataType SemanticAnalyzer::determineType(AstNode* node)

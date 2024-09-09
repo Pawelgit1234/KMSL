@@ -98,6 +98,11 @@ namespace kmsl
 			std::unique_ptr<WhileNode> whileNode = parseWhile();
 			return whileNode;
 		}
+		else if (match({ TokenType::BREAK, TokenType::CONTINUE, TokenType::EXIT }).type != TokenType::INVALID)
+		{
+			std::unique_ptr<CommandNode> commandNode(std::make_unique<CommandNode>(current_token_.type));
+			return commandNode;
+		}
 		else if (match({ TokenType::LINE_END }).type != TokenType::INVALID)
 		{
 			pos_--;
@@ -336,7 +341,7 @@ namespace kmsl
 		}
 		else if (match({ TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL }).type != TokenType::INVALID)
 			return std::make_unique<LiteralNode>(current_token_);
-		else if (match({ TokenType::VARIABLE }).type != TokenType::INVALID)
+		else if (match({ TokenType::VARIABLE, TokenType::GETX, TokenType::GETY }).type != TokenType::INVALID)
 			return std::make_unique<VariableNode>(current_token_);
 		else if (match({ TokenType::STATE }).type != TokenType::INVALID)
 		{

@@ -141,6 +141,7 @@
     <ClCompile Include="src\utils\Logger.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AST\CommandNode.hpp" />
     <ClInclude Include="src\io\IoController.hpp" />
     <ClInclude Include="src\AST\KeyNode.hpp" />
     <ClInclude Include="src\AST\MouseNode.hpp" />

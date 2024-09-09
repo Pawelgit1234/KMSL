@@ -1,8 +1,9 @@
-#include "Intepreter.hpp"
+﻿#include "Intepreter.hpp"
 
 namespace kmsl
 {
-	Intepreter::Intepreter(const std::string& code)
+	Intepreter::Intepreter(const std::string& code) : break_loop_(false), continue_loop_(false),
+		exit_program_(false)
 	{
 		kmsl::Lexer lexer(code);
 		std::vector<kmsl::Token> tokens = lexer.scanTokens();
@@ -53,18 +54,47 @@ namespace kmsl
 			return visit(keyNode);
 		else if (auto mouseNode = dynamic_cast<MouseNode*>(node))
 			return visit(mouseNode);
+		else if (auto commandNode = dynamic_cast<CommandNode*>(node))
+			visit(commandNode);
+
 		return variant();
 	}
 	  
 	variant Intepreter::visit(BlockNode* node)
 	{
 		for (auto& stmt : node->getStatements())
+		{
+			if (continue_loop_ || break_loop_ || exit_program_)
+			{	
+				continue_loop_ = false;
+				break;
+			}
+
 			visitNode(stmt.get());
+		}
 		return variant();
 	}
 
 	variant& Intepreter::visit(VariableNode* node)
 	{
+		if (node->token.type == TokenType::GETX || node->token.type == TokenType::GETY)
+		{
+			int x, y;
+			IoController::getMouseCoordinates(x, y);
+
+			variant result;
+
+			switch (node->token.type)
+			{
+			case TokenType::GETX:
+				result = x;
+				return result;
+			case TokenType::GETY:
+				result = y;
+				return result;
+			}
+		}
+
 		std::string varName = node->token.text;
 
 		auto it = variables_.find(varName);
@@ -497,8 +527,11 @@ namespace kmsl
 			if (!std::holds_alternative<bool>(conditionResult)) 
 				throw std::runtime_error("The condition in for should be a boolean expression!");
 
-			if (!std::get<bool>(conditionResult))
+			if (!std::get<bool>(conditionResult) || break_loop_ || exit_program_)
+			{
+				break_loop_ = false;
 				break;
+			}
 
 			visitNode(node->bodyNode.get());
 			visitNode(node->incrementNode.get());
@@ -515,8 +548,11 @@ namespace kmsl
 			if (!std::holds_alternative<bool>(conditionResult))
 				throw std::runtime_error("The condition in for should be a boolean expression!");
 
-			if (!std::get<bool>(conditionResult))
+			if (!std::get<bool>(conditionResult) || break_loop_ || exit_program_)
+			{
+				break_loop_ = false;
 				break;
+			}
 
 			visitNode(node->bodyNode.get());
 		}
@@ -656,6 +692,17 @@ namespace kmsl
 		else
 			IoController::moveBy(x, y, time);
 
+		return variant();
+	}
+
+	variant Intepreter::visit(CommandNode* node)
+	{
+		if (node->type == TokenType::BREAK)
+			break_loop_ = true;
+		else if (node->type == TokenType::CONTINUE)
+			continue_loop_ = true;
+		else if (node->type == TokenType::EXIT)
+			exit_program_ = true;
 		return variant();
 	}
 

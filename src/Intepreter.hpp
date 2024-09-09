@@ -39,8 +39,13 @@ namespace kmsl
 		variant visit(LiteralNode* node);
 		variant visit(KeyNode* node);
 		variant visit(MouseNode* node);
+		variant visit(CommandNode* node);
 
 		std::unordered_map<std::string, variant> variables_;
 		std::unique_ptr<BlockNode> root_;
+
+		bool break_loop_;
+		bool continue_loop_;
+		bool exit_program_;
 	};
 }

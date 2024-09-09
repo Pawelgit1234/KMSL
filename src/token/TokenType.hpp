@@ -13,7 +13,7 @@ namespace kmsl
 		PRINT, INPUT,
 
 		/* Mouse & Keyboard */
-		MOVE, DMOVE, SCROLL, TYPE, PRESS, HOLD, RELEASE,
+		MOVE, DMOVE, SCROLL, TYPE, PRESS, HOLD, RELEASE, GETX, GETY,
 		
 		/* Operators */
 		PLUS, MINUS, MULTIPLY, DIVIDE, FLOOR, MODULO, ROOT, LOG, POWER, PLUS_ONE, MINUS_ONE,
@@ -34,7 +34,8 @@ namespace kmsl
         SPACE, LINE_END, COMMENT,
 		INVALID,
 		COMMA,
-		STATE, WAIT
+		STATE, WAIT,
+		EXIT,
 	};
 
 	extern std::vector<std::pair<std::string, TokenType>> token_list;

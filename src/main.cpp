@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[])
 {
-	std::string code = "print 'Hello World'"; 
+	std::string code = "FOR (i = 0, i < 10, i++) { PRINT i\n !!\n}";
 	kmsl::Intepreter intepreter(code);
 	intepreter.execute();
 	return 0;

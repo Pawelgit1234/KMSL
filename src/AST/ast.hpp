@@ -11,3 +11,4 @@
 #include "WhileNode.hpp"
 #include "MouseNode.hpp"
 #include "KeyNode.hpp"
+#include "CommandNode.hpp"
