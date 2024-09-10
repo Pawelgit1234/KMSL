@@ -138,6 +138,7 @@
     <ClCompile Include="src\lexer\Lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\token\TokenType.cpp" />
+    <ClCompile Include="src\utils\FileReader.cpp" />
     <ClCompile Include="src\utils\Logger.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -161,6 +162,7 @@
     <ClInclude Include="src\lexer\Lexer.hpp" />
     <ClInclude Include="src\token\Token.hpp" />
     <ClInclude Include="src\token\TokenType.hpp" />
+    <ClInclude Include="src\utils\FileReader.hpp" />
     <ClInclude Include="src\utils\Logger.hpp" />
     <ClInclude Include="src\semantic\SymbolTable.hpp" />
   </ItemGroup>

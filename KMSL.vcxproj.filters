@@ -39,6 +39,9 @@
     <ClCompile Include="src\io\IoController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\FileReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\utils\Logger.hpp">
@@ -105,6 +108,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\AST\CommandNode.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\FileReader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

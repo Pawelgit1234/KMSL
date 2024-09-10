@@ -15,7 +15,7 @@ namespace kmsl
         {"(getx|GETX)\\b", TokenType::GETX},
         {"(gety|GETY)\\b", TokenType::GETY},
         {"!!", TokenType::EXIT},
-        {"\\n|\\r", TokenType::LINE_END},
+        {"(\\n|\\r)", TokenType::LINE_END},
         {"\\^\\^=", TokenType::LOG_ASSIGN},
         {"\\*\\*=", TokenType::POWER_ASSIGN},
         {"\\+\\+=", TokenType::PLUS_ASSIGN},

@@ -48,13 +48,19 @@ namespace kmsl
                 
                 if (token.type != TokenType::SPACE || token.type == TokenType::COMMENT)
                 {
-                    if (token.type == TokenType::STRING) // removing the ""/'' from the string
-                        token.text = token.text.substr(1, token.text.length() - 2);
+                    if (token.type == TokenType::STRING) 
+                    {
+                        token.text = token.text.substr(1, token.text.length() - 2); // removing the ""/'' from the string
+
+                        for (size_t i = 0; i < token.text.size(); ++i)
+                            if (token.text[i] == '\n' && i + 1 < token.text.size())
+                                token.text.erase(i + 1, 1); // deleting the space after \n; just a bug
+                    }
                     else if (token.text == "TRUE")
                         token.text = "true";
                     else if (token.text == "FALSE")
                         token.text = "false";
-                        
+                    
                     tokens_.push_back(token);
                 }
                 return;

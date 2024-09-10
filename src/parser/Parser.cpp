@@ -227,7 +227,6 @@ namespace kmsl
 
 		if (match({ TokenType::ELSE }).type != TokenType::INVALID)
 		{
-			pos_ += 2;
 			removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
 			require({ TokenType::LBRACE });
 			
