@@ -224,12 +224,12 @@ namespace kmsl
 		}
 
 		std::unique_ptr<BlockNode> elseNode = std::make_unique<BlockNode>();
-
-		if (match({ TokenType::ELSE }).type != TokenType::INVALID)
+		
+		auto parseElseBlock = [&](std::unique_ptr<BlockNode>& elseNode)
 		{
 			removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
 			require({ TokenType::LBRACE });
-			
+
 			while (match({ TokenType::RBRACE }).type == TokenType::INVALID)
 			{
 				std::unique_ptr<AstNode> codeStringNode = parseLine();
@@ -238,6 +238,15 @@ namespace kmsl
 				if (codeStringNode)
 					elseNode->addStatement(std::move(codeStringNode));
 			}
+		};
+
+		if (match({ TokenType::ELSE }).type != TokenType::INVALID)
+			parseElseBlock(elseNode);
+		else
+		{
+			pos_++;
+			if (match({ TokenType::ELSE }).type != TokenType::INVALID)
+				parseElseBlock(elseNode);
 		}
 
 		std::unique_ptr<IfNode> ifNode = std::make_unique<IfNode>(
