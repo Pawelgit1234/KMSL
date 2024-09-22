@@ -1,5 +1,5 @@
 ﻿#include "Parser.hpp"
-#include <iostream>
+
 namespace kmsl
 {
 	Parser::Parser(std::vector<Token> tokens)
@@ -149,6 +149,8 @@ namespace kmsl
 			std::unique_ptr<BinaryOpNode> binarNode(std::make_unique<BinaryOpNode>(assign, std::move(varNode), std::move(parseExpression())));
 			return binarNode;
 		}
+		else
+			return varNode;
 
 		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
 	}
@@ -247,6 +249,8 @@ namespace kmsl
 			pos_++;
 			if (match({ TokenType::ELSE }).type != TokenType::INVALID)
 				parseElseBlock(elseNode);
+			else
+				pos_--;
 		}
 
 		std::unique_ptr<IfNode> ifNode = std::make_unique<IfNode>(

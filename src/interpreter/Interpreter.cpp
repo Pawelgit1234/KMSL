@@ -1,38 +1,98 @@
-﻿#include "Intepreter.hpp"
+﻿#include "Interpreter.hpp"
 
 namespace kmsl
 {
-	Intepreter::Intepreter(const std::string& code) : break_loop_(false), continue_loop_(false),
-		exit_program_(false)
-	{
-		kmsl::Lexer lexer(code);
-		std::vector<kmsl::Token> tokens = lexer.scanTokens();
+	Interpreter::Interpreter() : break_loop_(false), continue_loop_(false),
+		exit_program_(false), logging_enabled_(false), console_running_(false) {}
 
-		std::cout << "LEXER: " << std::endl;
-		for (const auto& t : tokens) // delete
-			std::cout << "Pos: " << t.pos << " Type: " << (int)t.type << " Text: " << t.text << std::endl;
-
-		kmsl::Parser parser(tokens);
-		root_ = parser.parse();
-
-		std::cout << "PARSER: " << std::endl;
-		std::cout << root_->toString() << std::endl << std::endl << "PROGRAM OUTPUT:" << std::endl; // delete
-
-		kmsl::SemanticAnalyzer semantic(root_);
-		semantic.analyze();
-	}
-
-	Intepreter::~Intepreter()
+	Interpreter::~Interpreter()
 	{
 		variables_.clear();
 	}
 
-	void Intepreter::execute()
+	void Interpreter::execute()
 	{
 		visit(root_.get());
 	}
 
-	variant Intepreter::visitNode(AstNode* node)
+	void Interpreter::runConsole()
+	{
+		console_running_ = true;
+		bool in_construction = false;
+
+		std::string input;
+		std::string construction; // it's for constructions like 'for', 'while', 'if'
+
+		while (true)
+		{
+			if (in_construction)
+				std::cout << ". ";
+			else
+				std::cout << "> ";
+
+			std::getline(std::cin, input);
+
+			if (input == "")
+				in_construction = false;
+
+			Lexer l(input);
+			std::vector<Token> tokens = l.scanTokens();
+
+			if (tokens[0].type == TokenType::IF || tokens[0].type == TokenType::WHILE || tokens[0].type == TokenType::FOR || in_construction)
+			{
+				in_construction = true;
+				construction += input + '\n';
+			}
+
+			if (!in_construction)
+			{
+				if (!construction.empty())
+					setCode(construction);
+				else
+					setCode(input);
+
+				execute();
+
+				if (exit_program_)
+					break;
+
+				std::cout << std::endl;
+				construction.clear();
+			}
+		}
+	}
+
+	void Interpreter::setCode(const std::string& code)
+	{
+		kmsl::Lexer lexer(code);
+		std::vector<kmsl::Token> tokens = lexer.scanTokens();
+
+		if (logging_enabled_)
+		{
+			std::cout << "LEXER: " << std::endl;
+			for (const auto& t : tokens)
+				std::cout << "Pos: " << t.pos << " Type: " << (int)t.type << " Text: " << t.text << std::endl;
+		}
+
+		kmsl::Parser parser(tokens);
+		root_ = parser.parse();
+
+		if (logging_enabled_)
+		{
+			std::cout << "PARSER: " << std::endl;
+			std::cout << root_->toString() << std::endl << std::endl;
+		}
+
+		kmsl::SemanticAnalyzer semantic(root_);
+		if (console_running_)
+			semantic.set_vars(&vars_);
+		semantic.analyze();
+
+		if (logging_enabled_)
+			std::cout << "SEMANTIC ANALYZER: OK" << std::endl << "PROGRAM OUTPUT:" << std::endl;
+	}
+
+	variant Interpreter::visitNode(AstNode* node)
 	{
 		if (auto blockNode = dynamic_cast<BlockNode*>(node))
 			return visit(blockNode);
@@ -60,7 +120,7 @@ namespace kmsl
 		return variant();
 	}
 	  
-	variant Intepreter::visit(BlockNode* node)
+	variant Interpreter::visit(BlockNode* node)
 	{
 		for (auto& stmt : node->getStatements())
 		{
@@ -75,9 +135,23 @@ namespace kmsl
 		return variant();
 	}
 
-	variant& Intepreter::visit(VariableNode* node)
+	variant& Interpreter::visit(VariableNode* node)
 	{
-		if (node->token.type == TokenType::GETX || node->token.type == TokenType::GETY)
+		static bool already_printing = false; // defence from recursion
+
+		if (console_running_ && !already_printing)
+		{
+			if (auto variableNode = dynamic_cast<VariableNode*>(root_->getStatements()[0].get())) // for console: "> var" = "> PRINT var"
+			{
+				already_printing = true;
+
+				auto printNode = std::make_unique<UnarOpNode>(Token(TokenType::PRINT, "print", variableNode->token.pos), std::make_unique<VariableNode>(*variableNode));
+				visit(printNode.get());
+
+				already_printing = false;
+			}
+		}
+		else if (node->token.type == TokenType::GETX || node->token.type == TokenType::GETY)
 		{
 			int x, y;
 			IoController::getMouseCoordinates(x, y);
@@ -88,11 +162,11 @@ namespace kmsl
 			{
 			case TokenType::GETX:
 				result = x;
-				return result;
 			case TokenType::GETY:
 				result = y;
-				return result;
 			}
+
+			return result;
 		}
 
 		std::string varName = node->token.text;
@@ -104,7 +178,7 @@ namespace kmsl
 			throw std::runtime_error("Variable " + varName + " not found.");
 	}
 
-	variant Intepreter::visit(UnarOpNode* node)
+	variant Interpreter::visit(UnarOpNode* node)
 	{
 		TokenType op = node->op.type;
 
@@ -226,7 +300,7 @@ namespace kmsl
 		return variant();
 	}
 
-	variant Intepreter::visit(BinaryOpNode* node)
+	variant Interpreter::visit(BinaryOpNode* node)
 	{
 		switch (node->op.type)
 		{
@@ -500,7 +574,7 @@ namespace kmsl
 		return variant();
 	}
 
-	variant Intepreter::visit(IfNode* node)
+	variant Interpreter::visit(IfNode* node)
 	{
 		variant conditionResult = visitNode(node->conditionNode.get());
 
@@ -516,7 +590,7 @@ namespace kmsl
 		return variant();
 	}
 
-	variant Intepreter::visit(ForNode* node)
+	variant Interpreter::visit(ForNode* node)
 	{
 		visitNode(node->initializerNode.get());
 
@@ -539,7 +613,7 @@ namespace kmsl
 		return variant();
 	}
 
-	variant Intepreter::visit(WhileNode* node)
+	variant Interpreter::visit(WhileNode* node)
 	{
 		while (true)
 		{
@@ -559,7 +633,7 @@ namespace kmsl
 		return variant();
 	}
 
-	variant Intepreter::visit(LiteralNode* node)
+	variant Interpreter::visit(LiteralNode* node)
 	{
 		DataType type = Symbol::convertType(node->token.type);
 		auto value = node->token.text;
@@ -602,7 +676,7 @@ namespace kmsl
 		}
 	}
 
-	variant Intepreter::visit(KeyNode* node)
+	variant Interpreter::visit(KeyNode* node)
 	{
 		auto processButtons = [&](float& time) -> std::vector<std::string> {
 			std::vector<std::string> buttons;
@@ -659,7 +733,7 @@ namespace kmsl
 		return variant();
 	}
 
-	variant Intepreter::visit(MouseNode* node)
+	variant Interpreter::visit(MouseNode* node)
 	{
 		auto setValues = [&](int& x, int& y, float& time) {
 			variant xValue = visitNode(node->xNode.get());
@@ -695,7 +769,7 @@ namespace kmsl
 		return variant();
 	}
 
-	variant Intepreter::visit(CommandNode* node)
+	variant Interpreter::visit(CommandNode* node)
 	{
 		if (node->type == TokenType::BREAK)
 			break_loop_ = true;

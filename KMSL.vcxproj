@@ -70,6 +70,26 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ExternalIncludePath>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0;$(ExternalIncludePath)</ExternalIncludePath>
+    <LibraryPath>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\libs;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ExternalIncludePath>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\libs;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ExternalIncludePath>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0;$(ExternalIncludePath)</ExternalIncludePath>
+    <LibraryPath>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\libs;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ExternalIncludePath>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\libs;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -77,10 +97,12 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -91,13 +113,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\libs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -107,10 +131,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -121,25 +147,26 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\libs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\ellaw\OneDrive\Dokumente\libralies\boost_1_82_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\io\IoController.cpp" />
     <ClCompile Include="src\semantic\SemanticAnalyzer.cpp" />
-    <ClCompile Include="src\Intepreter.cpp" />
+    <ClCompile Include="src\interpreter\Interpreter.cpp" />
     <ClCompile Include="src\parser\Parser.cpp" />
     <ClCompile Include="src\lexer\Lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\token\TokenType.cpp" />
-    <ClCompile Include="src\utils\FileReader.cpp" />
-    <ClCompile Include="src\utils\Logger.cpp" />
+    <ClCompile Include="src\interpreter\FileReader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\AST\CommandNode.hpp" />
@@ -147,7 +174,7 @@
     <ClInclude Include="src\AST\KeyNode.hpp" />
     <ClInclude Include="src\AST\MouseNode.hpp" />
     <ClInclude Include="src\semantic\SemanticAnalyzer.hpp" />
-    <ClInclude Include="src\Intepreter.hpp" />
+    <ClInclude Include="src\interpreter\Interpreter.hpp" />
     <ClInclude Include="src\AST\ast.hpp" />
     <ClInclude Include="src\AST\AstNode.hpp" />
     <ClInclude Include="src\AST\BinaryOpNode.hpp" />
@@ -162,8 +189,7 @@
     <ClInclude Include="src\lexer\Lexer.hpp" />
     <ClInclude Include="src\token\Token.hpp" />
     <ClInclude Include="src\token\TokenType.hpp" />
-    <ClInclude Include="src\utils\FileReader.hpp" />
-    <ClInclude Include="src\utils\Logger.hpp" />
+    <ClInclude Include="src\interpreter\FileReader.hpp" />
     <ClInclude Include="src\semantic\SymbolTable.hpp" />
   </ItemGroup>
   <ItemGroup>

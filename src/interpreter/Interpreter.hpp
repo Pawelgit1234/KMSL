@@ -7,25 +7,29 @@
 #include <sstream>
 #include <iostream>
 
-#include "AST/ast.hpp"
-#include "lexer/Lexer.hpp"
-#include "parser/Parser.hpp"
-#include "token/Token.hpp"
-#include "semantic/SemanticAnalyzer.hpp"
-#include "semantic/SymbolTable.hpp"
-#include "io/IoController.hpp"
+#include "../AST/ast.hpp"
+#include "../lexer/Lexer.hpp"
+#include "../parser/Parser.hpp"
+#include "../token/Token.hpp"
+#include "../semantic/SemanticAnalyzer.hpp"
+#include "../semantic/SymbolTable.hpp"
+#include "../io/IoController.hpp"
 
 using variant = std::variant<bool, int, float, std::string>;
 
 namespace kmsl
 {
-	class Intepreter
+	class Interpreter
 	{
 	public:
-		Intepreter(const std::string& code);
-		~Intepreter();
+		Interpreter();
+		~Interpreter();
 
 		void execute();
+		void runConsole();
+
+		void setLoggingEnabled(bool logging_enabled) { logging_enabled_ = logging_enabled; }
+		void setCode(const std::string& code);
 
 	private:
 		variant visitNode(AstNode* node);
@@ -42,10 +46,14 @@ namespace kmsl
 		variant visit(CommandNode* node);
 
 		std::unordered_map<std::string, variant> variables_;
+		std::unordered_map<std::string, Symbol> vars_; // for semantic-analysis-console
 		std::unique_ptr<BlockNode> root_;
 
 		bool break_loop_;
 		bool continue_loop_;
 		bool exit_program_;
+
+		bool logging_enabled_;
+		bool console_running_;
 	};
 }
