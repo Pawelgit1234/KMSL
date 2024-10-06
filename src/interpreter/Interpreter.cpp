@@ -3,7 +3,7 @@
 namespace kmsl
 {
 	Interpreter::Interpreter() : break_loop_(false), continue_loop_(false),
-		exit_program_(false), logging_enabled_(false), console_running_(false) {}
+		exit_program_(false), logging_enabled_(false), console_running_(false), deepness_(0) {}
 
 	Interpreter::~Interpreter()
 	{
@@ -47,9 +47,9 @@ namespace kmsl
 			if (!in_construction)
 			{
 				if (!construction.empty())
-					setCode(construction);
+					setCode(FileReader::replaceEscapedNewlines(construction));
 				else
-					setCode(input);
+					setCode(FileReader::replaceEscapedNewlines(input));
 
 				execute();
 
@@ -85,7 +85,7 @@ namespace kmsl
 
 		kmsl::SemanticAnalyzer semantic(root_);
 		if (console_running_)
-			semantic.set_vars(&vars_);
+			semantic.set_symbols(&symbols_);
 		semantic.analyze();
 
 		if (logging_enabled_)
@@ -122,6 +122,7 @@ namespace kmsl
 	  
 	variant Interpreter::visit(BlockNode* node)
 	{
+		deepness_++;
 		for (auto& stmt : node->getStatements())
 		{
 			if (continue_loop_ || break_loop_ || exit_program_)
@@ -132,6 +133,14 @@ namespace kmsl
 
 			visitNode(stmt.get());
 		}
+
+		variables_.erase(
+			std::remove_if(variables_.begin(), variables_.end(),
+				[&](const Variable& var) { return var.deepness > deepness_; }),
+			variables_.end());
+
+		deepness_--;
+
 		return variant();
 	}
 
@@ -169,13 +178,13 @@ namespace kmsl
 			return result;
 		}
 
-		std::string varName = node->token.text;
+		auto it = std::find_if(variables_.begin(), variables_.end(),
+			[&](const Variable& var) { return var.name == node->token.text; });
 
-		auto it = variables_.find(varName);
 		if (it != variables_.end())
-			return it->second;
-		else
-			throw std::runtime_error("Variable " + varName + " not found.");
+			return it->value;
+
+		throw std::runtime_error("Variable " + node->token.text + " not found.");
 	}
 
 	variant Interpreter::visit(UnarOpNode* node)
@@ -249,7 +258,7 @@ namespace kmsl
 		else if (op == TokenType::INPUT)
 		{
 			auto variableNode = dynamic_cast<VariableNode*>(node->operand.get());
-			variant& variable = variables_[variableNode->token.text];
+			variant& variable = visit(variableNode);
 
 			std::string input;
 			std::getline(std::cin, input);
@@ -307,8 +316,17 @@ namespace kmsl
 		case TokenType::ASSIGN:
 		{
 			auto variableNode = dynamic_cast<VariableNode*>(node->leftOperand.get());
+
+			auto it = std::find_if(variables_.begin(), variables_.end(), 
+				[&](const Variable& var) { return variableNode->token.text == var.name; });
+
 			variant valueNode = visitNode(node->rightOperand.get());
-			variables_[variableNode->token.text] = valueNode;
+
+			if (it != variables_.end())
+				it->value = valueNode;
+			else
+				variables_.emplace_back(valueNode, variableNode->token.text, deepness_);
+
 			break;
 		}
 		case TokenType::PLUS_ASSIGN:
@@ -382,7 +400,7 @@ namespace kmsl
 				default: throw std::runtime_error("Unsupported assignment operation for float.");
 				}
 
-				variables_[variableNode->token.text] = var;
+				visit(variableNode) = var;
 			}
 			else if (std::holds_alternative<std::string>(value) && std::holds_alternative<std::string>(valueNode))
 			{
@@ -398,6 +416,29 @@ namespace kmsl
 					throw std::runtime_error("Unsupported assignment operation for strings.");
 				}
 			}
+			else if ((std::holds_alternative<std::string>(value) && std::holds_alternative<int>(valueNode)) ||
+				(std::holds_alternative<int>(value) && std::holds_alternative<std::string>(valueNode)))
+			{
+				std::string& var = std::holds_alternative<std::string>(value) ? std::get<std::string>(value) : std::get<std::string>(valueNode);
+				int times = std::holds_alternative<int>(value) ? std::get<int>(value) : std::get<int>(valueNode);
+
+				switch (node->op.type)
+				{
+				case TokenType::MULTIPLY_ASSIGN:
+				{
+					if (times < 0)
+						throw std::runtime_error("Cannot multiply string by a negative number.");
+
+					std::string string = var;
+					for (int i = 1; i < times; i++)
+						var += string;
+					break;
+				}
+				default:
+					throw std::runtime_error("Unsupported assignment operation for strings.");
+				}
+			}
+
 			else
 				throw std::runtime_error("Unsupported types for assignment operation.");
 
@@ -529,6 +570,29 @@ namespace kmsl
 				default: throw std::runtime_error("Unsupported operation for strings.");
 				}
 			}
+			else if ((std::holds_alternative<std::string>(leftValue) && std::holds_alternative<int>(rightValue)) ||
+				(std::holds_alternative<int>(leftValue) && std::holds_alternative<std::string>(rightValue)))
+			{
+				std::string var = std::holds_alternative<std::string>(leftValue) ? std::get<std::string>(leftValue) : std::get<std::string>(rightValue);
+				int times = std::holds_alternative<int>(leftValue) ? std::get<int>(leftValue) : std::get<int>(rightValue);
+				
+				switch (node->op.type)
+				{
+				case TokenType::MULTIPLY:
+				{
+					if (times < 0)
+						throw std::runtime_error("Cannot multiply string by a negative number.");
+
+					std::string string = var;
+					for (int i = 1; i < times; i++)
+						var += string;
+					return var;
+					break;
+				}
+				default:
+					throw std::runtime_error("Unsupported assignment operation for strings.");
+				}
+			}
 			else
 			{
 				throw std::runtime_error("Unsupported operand types for binary operation.");
@@ -592,7 +656,9 @@ namespace kmsl
 
 	variant Interpreter::visit(ForNode* node)
 	{
-		visitNode(node->initializerNode.get());
+		deepness_++;
+		visitNode(node->initializerNode.get()); // the var must be deleted after using in 'for'
+		deepness_--;
 
 		while (true)
 		{

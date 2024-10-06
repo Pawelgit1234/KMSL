@@ -6,19 +6,16 @@
 
 namespace kmsl
 {
-    namespace utils
+    class FileReader
     {
-        class FileReader
-        {
-        public:
-            FileReader(const std::string& filePath) : filePath_(filePath) {}
+    public:
+        FileReader(const std::string& filePath) : filePath_(filePath) {}
 
-            std::string read();
+        std::string read();
 
-        private:
-            std::string replaceEscapedNewlines(const std::string& input);
+        static std::string replaceEscapedNewlines(const std::string& input);
 
-            std::string filePath_;
-        };
-    }
+    private:
+        std::string filePath_;
+    };
 }

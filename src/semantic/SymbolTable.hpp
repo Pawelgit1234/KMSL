@@ -15,10 +15,11 @@ namespace kmsl
 	struct Symbol // all symbols are variables, so no category
 	{
 	public:
-		Symbol() : name(""), dataType(DataType::UNDEFINED) {}
-		Symbol(const std::string& n) : name(n), dataType(DataType::UNDEFINED) {}
-		Symbol (const std::string& n, DataType type) : name(n), dataType(type) {}
-		Symbol(const std::string& n, TokenType type) : name(n), dataType(convertType(type)) {}
+		Symbol() : name(""), dataType(DataType::UNDEFINED), deepness(0) {}
+		Symbol(unsigned int d) : name(""), dataType(DataType::UNDEFINED), deepness(d) {}
+		Symbol(const std::string& n, unsigned int d) : name(n), dataType(DataType::UNDEFINED), deepness(d) {}
+		Symbol(const std::string& n, DataType type, unsigned int d) : name(n), dataType(type), deepness(d) {}
+		Symbol(const std::string& n, TokenType type, unsigned int d) : name(n), dataType(convertType(type)), deepness(d) {}
 
 		static DataType convertType(TokenType type)
 		{
@@ -47,6 +48,7 @@ namespace kmsl
 
 		std::string name;
 		DataType dataType;
+		unsigned short deepness; // n deeper than n - 1
 	};
 
 	class SymbolTable

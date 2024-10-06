@@ -15,7 +15,7 @@ namespace kmsl
 
 		void analyze();
 
-		void set_vars(std::unordered_map<std::string, Symbol>* vars) { in_console_ = true; vars_ = vars; }
+		void set_symbols(std::vector<Symbol>* symbols) { in_console_ = true; symbols_ = symbols; }
 
 	private:
 		void visitNode(AstNode* node);
@@ -34,10 +34,11 @@ namespace kmsl
 		DataType determineBinaryOpType(BinaryOpNode* node);
 
 		SymbolTable symbol_table_;
-		std::unordered_map<std::string, Symbol>* vars_; // for console
 		std::unique_ptr<BlockNode>& root_;
+		std::vector<Symbol>* symbols_; // for console
 
 		bool inside_loop_;
+		unsigned short deepness_;
 		bool in_console_;
 	};
 }

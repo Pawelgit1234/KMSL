@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 	if (vm.count("file"))
 	{
 		std::string filepath = vm["file"].as<std::string>();
-		kmsl::utils::FileReader fr(filepath);
+		kmsl::FileReader fr(filepath);
 		std::string code = fr.read();
 		
 		kmsl::Interpreter interpreter;

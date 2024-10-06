@@ -14,11 +14,19 @@
 #include "../semantic/SemanticAnalyzer.hpp"
 #include "../semantic/SymbolTable.hpp"
 #include "../io/IoController.hpp"
-
-using variant = std::variant<bool, int, float, std::string>;
+#include "FileReader.hpp"
 
 namespace kmsl
 {
+	using variant = std::variant<bool, int, float, std::string>;
+
+	struct Variable
+	{
+		variant value;
+		std::string name;
+		unsigned short deepness;
+	};
+
 	class Interpreter
 	{
 	public:
@@ -45,9 +53,9 @@ namespace kmsl
 		variant visit(MouseNode* node);
 		variant visit(CommandNode* node);
 
-		std::unordered_map<std::string, variant> variables_;
-		std::unordered_map<std::string, Symbol> vars_; // for semantic-analysis-console
+		std::vector<Variable> variables_;
 		std::unique_ptr<BlockNode> root_;
+		std::vector<Symbol> symbols_; // for semantic-analysis-console
 
 		bool break_loop_;
 		bool continue_loop_;
@@ -55,5 +63,7 @@ namespace kmsl
 
 		bool logging_enabled_;
 		bool console_running_;
+
+		unsigned short deepness_;
 	};
 }

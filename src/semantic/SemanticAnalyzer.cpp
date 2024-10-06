@@ -2,7 +2,8 @@
 
 namespace kmsl
 {
-	SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<BlockNode>& root) : symbol_table_(), root_(root), inside_loop_(false), in_console_(false), vars_(nullptr) {}
+	SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<BlockNode>& root) : symbol_table_(), root_(root),
+		inside_loop_(false), in_console_(false), symbols_(nullptr), deepness_(0) {}
 
 	void SemanticAnalyzer::analyze()
 	{
@@ -36,10 +37,19 @@ namespace kmsl
 	void SemanticAnalyzer::visit(BlockNode* node)
 	{
 		symbol_table_.enterScope();
+		deepness_++;
 		for (auto& stmt : node->getStatements())
 			visitNode(stmt.get());
 
 		symbol_table_.exitScope();
+
+		if (in_console_)
+			symbols_->erase(
+				std::remove_if(symbols_->begin(), symbols_->end(),
+					[&](const Symbol& sym) { return sym.deepness > deepness_; }),
+				symbols_->end());
+
+		deepness_--;
 	}
 
 	void SemanticAnalyzer::visit(VariableNode* node)
@@ -48,8 +58,10 @@ namespace kmsl
 		{
 			if (in_console_)
 			{
-				auto it = vars_->find(node->token.text);
-				if (it == vars_->end())
+				auto it = std::find_if(symbols_->begin(), symbols_->end(),
+					[&](const Symbol& symbol) { return symbol.name == node->token.text; });
+
+				if (it == symbols_->end())
 					throw std::runtime_error("The variable " + node->token.text + " is not existing!");
 
 			}
@@ -67,9 +79,19 @@ namespace kmsl
 		else if (op == TokenType::INPUT)
 		{
 			auto variableNode = dynamic_cast<VariableNode*>(node->operand.get());
-			Symbol s(variableNode->token.text);
+			Symbol s(variableNode->token.text, deepness_);
+
 			if (in_console_)
-				(*vars_)[variableNode->token.text] = s;
+			{
+				auto it = std::find_if(symbols_->begin(), symbols_->end(),
+					[&](const Symbol& sym) { return sym.name == variableNode->token.text; });
+
+				if (it != symbols_->end())
+					*it = s;
+				else
+					symbols_->push_back(s);
+			}
+
 			symbol_table_.addSymbol(s);
 		}
 	}
@@ -85,17 +107,35 @@ namespace kmsl
 			auto variableNode = dynamic_cast<VariableNode*>(node->leftOperand.get());
 			if (!symbol_table_.getSymbol(variableNode->token.text))
 			{
-				Symbol s(variableNode->token.text, type);
-				if (in_console_)
-					(*vars_)[variableNode->token.text] = s;
+				Symbol s(variableNode->token.text, type, deepness_);
 				symbol_table_.addSymbol(s);
+
+				if (in_console_)
+				{
+					auto it = std::find_if(symbols_->begin(), symbols_->end(),
+						[&](const Symbol& sym) { return sym.name == variableNode->token.text; });
+
+					if (it != symbols_->end())
+						*it = s;
+					else
+						symbols_->push_back(s);
+				}
 			}
 			else
 			{
 				Symbol* s = symbol_table_.getSymbol(variableNode->token.text);
-				if (in_console_)
-					(*vars_)[variableNode->token.text] = *s;
 				s->dataType = type;
+
+				if (in_console_)
+				{
+					auto it = std::find_if(symbols_->begin(), symbols_->end(),
+						[&](const Symbol& sym) { return sym.name == variableNode->token.text; });
+
+					if (it != symbols_->end())
+						*it = *s;
+					else
+						symbols_->push_back(*s);
+				}
 			}
 			break;
 		}
@@ -117,12 +157,26 @@ namespace kmsl
 			DataType type = determineType(node->rightOperand.get());
 
 			auto variableNode = dynamic_cast<VariableNode*>(node->leftOperand.get());
-			if (!symbol_table_.getSymbol(variableNode->token.text))
-				throw std::runtime_error("The variable: " + variableNode->token.text + " does not exists.");
+
+			if (in_console_)
+			{
+				auto it = std::find_if(symbols_->begin(), symbols_->end(),
+					[&](const Symbol& sym) { return sym.name == variableNode->token.text; });
+
+				if (it != symbols_->end())
+					it->dataType = type;
+				else
+					throw std::runtime_error("The variable: " + variableNode->token.text + " does not exists.");
+			}
 			else
 			{
-				Symbol* s = symbol_table_.getSymbol(variableNode->token.text);
-				s->dataType = type;
+				if (!symbol_table_.getSymbol(variableNode->token.text))
+					throw std::runtime_error("The variable: " + variableNode->token.text + " does not exists.");
+				else
+				{
+					Symbol* s = symbol_table_.getSymbol(variableNode->token.text);
+					s->dataType = type;
+				}
 			}
 			break;
 		}
@@ -168,7 +222,10 @@ namespace kmsl
 		bool wasInsideLoop = inside_loop_;
 		inside_loop_ = true;
 
+		deepness_++;
 		visitNode(node->initializerNode.get());
+		deepness_--;
+
 		if (determineType(node->conditionNode.get()) != DataType::BOOL) std::runtime_error("The condition in for should be a boolean expression!");
 		visitNode(node->incrementNode.get());
 		visit(dynamic_cast<BlockNode*>(node->bodyNode.get()));
