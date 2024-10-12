@@ -57,10 +57,13 @@ namespace kmsl
 		std::unique_ptr<BlockNode> root_;
 		std::vector<Symbol> symbols_; // for semantic-analysis-console
 
+		/* PROGRAMM FLAGS */
 		bool break_loop_;
 		bool continue_loop_;
 		bool exit_program_;
+		bool is_printable_; // for console, for example: > a or > 4 * 4 # it would print the answer without "print"
 
+		/* FLAGS */
 		bool logging_enabled_;
 		bool console_running_;
 

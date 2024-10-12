@@ -130,7 +130,12 @@ namespace kmsl
 			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, std::make_unique<LiteralNode>(require({ TokenType::VARIABLE, TokenType::STRING, TokenType::FLOAT, TokenType::INT }))));
 			return unarNode;
 		}
-		
+		else if (match({ TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL }).type != TokenType::INVALID)
+		{
+			pos_--;
+			std::unique_ptr<AstNode> expressionNode = parseExpression();
+			return expressionNode;
+		}
 		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
 	}
 
@@ -148,6 +153,11 @@ namespace kmsl
 			Token assign = current_token_;
 			std::unique_ptr<BinaryOpNode> binarNode(std::make_unique<BinaryOpNode>(assign, std::move(varNode), std::move(parseExpression())));
 			return binarNode;
+		}
+		else if (match({ TokenType::PLUS, TokenType::MINUS, TokenType::MULTIPLY, TokenType::DIVIDE, TokenType::MODULO, TokenType::FLOOR, TokenType::POWER, TokenType::ROOT, TokenType::LOG, TokenType::BIT_AND, TokenType::BIT_OR, TokenType::BIT_XOR, TokenType::BIT_LEFT_SHIFT, TokenType::BIT_RIGHT_SHIFT }).type != TokenType::INVALID)
+		{
+			pos_ -= 2; // a + b: back to a
+			return std::move(parseExpression());
 		}
 		else
 			return varNode;

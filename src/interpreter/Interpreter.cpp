@@ -99,11 +99,43 @@ namespace kmsl
 		else if (auto variableNode = dynamic_cast<VariableNode*>(node))
 			return visit(variableNode);
 		else if (auto literalNode = dynamic_cast<LiteralNode*>(node))
+		{
+			if (console_running_ && is_printable_)
+			{
+				is_printable_ = false;
+
+				UnarOpNode printNode(Token(TokenType::PRINT, "print", literalNode->token.pos), std::make_unique<LiteralNode>(*literalNode));
+				visit(&printNode);
+			}
+
 			return visit(literalNode);
+		}
 		else if (auto unarOpNode = dynamic_cast<UnarOpNode*>(node))
 			return visit(unarOpNode);
 		else if (auto binaryOpNode = dynamic_cast<BinaryOpNode*>(node))
-			return visit(binaryOpNode);
+		{
+			if (console_running_ && is_printable_)
+			{
+				is_printable_ = false;
+
+				variant value = visit(binaryOpNode);
+				Token t;
+
+				if (std::holds_alternative<int>(value))
+					t = Token(TokenType::INT, std::to_string(std::get<int>(value)), binaryOpNode->op.pos);
+				else if (std::holds_alternative<float>(value))
+					t = Token(TokenType::FLOAT, std::to_string(std::get<float>(value)), binaryOpNode->op.pos);
+				else if (std::holds_alternative<std::string>(value))
+					t = Token(TokenType::STRING, std::get<std::string>(value), binaryOpNode->op.pos);
+				else if (std::holds_alternative<bool>(value))
+					t = Token(TokenType::BOOL, std::get<bool>(value) ? "true": "false", binaryOpNode->op.pos);
+
+				UnarOpNode printNode(Token(TokenType::PRINT, "print", binaryOpNode->op.pos), std::make_unique<LiteralNode>(t));
+				visit(&printNode);
+			}
+
+			return visit(binaryOpNode);;
+		}
 		else if (auto ifNode = dynamic_cast<IfNode*>(node))
 			return visit(ifNode);
 		else if (auto forNode = dynamic_cast<ForNode*>(node))
@@ -131,6 +163,41 @@ namespace kmsl
 				break;
 			}
 
+			auto binaryOpNode = dynamic_cast<BinaryOpNode*>(stmt.get());
+
+			if (dynamic_cast<VariableNode*>(stmt.get()) || dynamic_cast<LiteralNode*>(stmt.get()) ||
+				(binaryOpNode &&
+				(binaryOpNode->op.type == TokenType::PLUS ||
+				binaryOpNode->op.type == TokenType::MINUS ||
+				binaryOpNode->op.type == TokenType::MULTIPLY ||
+				binaryOpNode->op.type == TokenType::DIVIDE ||
+				binaryOpNode->op.type == TokenType::FLOOR ||
+				binaryOpNode->op.type == TokenType::MODULO ||
+				binaryOpNode->op.type == TokenType::ROOT ||
+				binaryOpNode->op.type == TokenType::LOG ||
+				binaryOpNode->op.type == TokenType::POWER ||
+				binaryOpNode->op.type == TokenType::PLUS_ONE ||
+				binaryOpNode->op.type == TokenType::MINUS_ONE ||
+				binaryOpNode->op.type == TokenType::BIT_AND ||
+				binaryOpNode->op.type == TokenType::BIT_OR ||
+				binaryOpNode->op.type == TokenType::BIT_XOR ||
+				binaryOpNode->op.type == TokenType::BIT_NOT ||
+				binaryOpNode->op.type == TokenType::BIT_LEFT_SHIFT ||
+				binaryOpNode->op.type == TokenType::BIT_RIGHT_SHIFT ||
+				binaryOpNode->op.type == TokenType::LOGICAL_AND ||
+				binaryOpNode->op.type == TokenType::LOGICAL_OR ||
+				binaryOpNode->op.type == TokenType::LOGICAL_NOT ||
+				binaryOpNode->op.type == TokenType::EQUALS ||
+				binaryOpNode->op.type == TokenType::NOT_EQUALS ||
+				binaryOpNode->op.type == TokenType::LESS_THAN ||
+				binaryOpNode->op.type == TokenType::GREATER_THAN ||
+				binaryOpNode->op.type == TokenType::LESS_THAN_OR_EQUAL ||
+				binaryOpNode->op.type == TokenType::GREATER_THAN_OR_EQUAL)) && console_running_)
+			{
+				is_printable_ = true;
+			}
+
+
 			visitNode(stmt.get());
 		}
 
@@ -146,19 +213,12 @@ namespace kmsl
 
 	variant& Interpreter::visit(VariableNode* node)
 	{
-		static bool already_printing = false; // defence from recursion
-
-		if (console_running_ && !already_printing)
+		if (console_running_ && is_printable_)
 		{
-			if (auto variableNode = dynamic_cast<VariableNode*>(root_->getStatements()[0].get())) // for console: "> var" = "> PRINT var"
-			{
-				already_printing = true;
+			is_printable_ = false;
 
-				auto printNode = std::make_unique<UnarOpNode>(Token(TokenType::PRINT, "print", variableNode->token.pos), std::make_unique<VariableNode>(*variableNode));
-				visit(printNode.get());
-
-				already_printing = false;
-			}
+			UnarOpNode printNode(Token(TokenType::PRINT, "print", node->token.pos), std::make_unique<VariableNode>(*node));
+			visit(&printNode);
 		}
 		else if (node->token.type == TokenType::GETX || node->token.type == TokenType::GETY)
 		{
@@ -315,6 +375,7 @@ namespace kmsl
 		{
 		case TokenType::ASSIGN:
 		{
+
 			auto variableNode = dynamic_cast<VariableNode*>(node->leftOperand.get());
 
 			auto it = std::find_if(variables_.begin(), variables_.end(), 
@@ -347,6 +408,7 @@ namespace kmsl
 			auto variableNode = dynamic_cast<VariableNode*>(node->leftOperand.get());
 			variant& value = visit(variableNode);
 			variant valueNode = visitNode(node->rightOperand.get());
+
 			if (std::holds_alternative<int>(value) && std::holds_alternative<int>(valueNode))
 			{
 				int& var = std::get<int>(value);
@@ -359,7 +421,7 @@ namespace kmsl
 				case TokenType::MULTIPLY_ASSIGN: var *= val; break;
 				case TokenType::DIVIDE_ASSIGN:
 					if (val == 0) throw std::runtime_error("Division by zero.");
-					var /= val;
+					visit(variableNode) = static_cast<float>(var) / static_cast<float>(val);
 					break;
 				case TokenType::MODULO_ASSIGN: var %= val; break;
 				case TokenType::BIT_AND_ASSIGN: var &= val; break;
@@ -368,9 +430,9 @@ namespace kmsl
 				case TokenType::BIT_LEFT_SHIFT_ASSIGN: var <<= val; break;
 				case TokenType::BIT_RIGHT_SHIFT_ASSIGN: var >>= val; break;
 				case TokenType::FLOOR_ASSIGN: var = std::floor(var / val); break;
-				case TokenType::POWER_ASSIGN: var = std::pow(var, val); break;
-				case TokenType::ROOT_ASSIGN: var = std::pow(var, 1.0 / val); break;
-				case TokenType::LOG_ASSIGN: var = std::log(var) / std::log(val); break;
+				case TokenType::POWER_ASSIGN: visit(variableNode) = std::pow(static_cast<float>(var), static_cast<float>(val)); break;
+				case TokenType::ROOT_ASSIGN: visit(variableNode) = std::pow(static_cast<float>(var), 1.0f / static_cast<float>(val)); break;
+				case TokenType::LOG_ASSIGN: visit(variableNode) = std::log(static_cast<float>(var)) / std::log(static_cast<float>(val)); break;
 				default: throw std::runtime_error("Unsupported assignment operation.");
 				}
 			}
@@ -389,9 +451,6 @@ namespace kmsl
 				case TokenType::DIVIDE_ASSIGN:
 					if (val == 0.0f) throw std::runtime_error("Division by zero.");
 					var /= val;
-					break;
-				case TokenType::MODULO_ASSIGN:
-					throw std::runtime_error("Modulo operation not supported for floats.");
 					break;
 				case TokenType::FLOOR_ASSIGN: var = std::floor(var / val); break;
 				case TokenType::POWER_ASSIGN: var = std::pow(var, val); break;
@@ -482,7 +541,7 @@ namespace kmsl
 				case TokenType::MULTIPLY: return left * right;
 				case TokenType::DIVIDE:
 					if (right == 0) throw std::runtime_error("Division by zero.");
-					return left / right;
+					return static_cast<float>(left) / static_cast<float>(right);
 				case TokenType::MODULO: return left % right;
 				case TokenType::BIT_AND: return left & right;
 				case TokenType::BIT_OR: return left | right;
@@ -497,12 +556,12 @@ namespace kmsl
 				case TokenType::NOT_EQUALS: return left != right;
 				case TokenType::LOGICAL_AND: return left && right;
 				case TokenType::LOGICAL_OR: return left || right;
-				case TokenType::POWER: return static_cast<int>(std::pow(left, right));
+				case TokenType::POWER: return std::pow(static_cast<float>(left), static_cast<float>(right));
 				case TokenType::FLOOR: return static_cast<int>(std::floor(left / right));
-				case TokenType::LOG: return static_cast<int>(std::log(left) / std::log(right));
+				case TokenType::LOG: return std::log(static_cast<float>(left)) / std::log(static_cast<float>(right));
 				case TokenType::ROOT:
 					if (right <= 0) throw std::runtime_error("Root degree must be greater than 0.");
-					return static_cast<int>(std::pow(left, 1.0 / right));
+					return std::pow(static_cast<float>(left), 1.0f / static_cast<float>(right));
 				}
 			}
 			else if (std::holds_alternative<float>(leftValue) && std::holds_alternative<float>(rightValue)||
