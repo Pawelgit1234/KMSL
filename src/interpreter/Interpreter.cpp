@@ -318,31 +318,38 @@ namespace kmsl
 		else if (op == TokenType::INPUT)
 		{
 			auto variableNode = dynamic_cast<VariableNode*>(node->operand.get());
-			variant& variable = visit(variableNode);
+			variant variable;
 
 			std::string input;
 			std::getline(std::cin, input);
 
-			if (std::holds_alternative<int>(variable))
-			{
-				int intValue;
-				std::stringstream(input) >> intValue;
-				if (std::stringstream(input).fail())
-					throw std::runtime_error("Invalid input for integer type.");
+			std::stringstream ss(input);
+
+			int intValue;
+			float floatValue;
+
+	
+			if (ss >> intValue && ss.eof()) 
 				variable = intValue;
-			}
-			else if (std::holds_alternative<float>(variable))
+			else 
 			{
-				float floatValue;
-				std::stringstream(input) >> floatValue;
-				if (std::stringstream(input).fail())
-					throw std::runtime_error("Invalid input for float type.");
-				variable = floatValue;
+				ss.clear(); 
+				ss.str(input); 
+
+
+				if (ss >> floatValue && ss.eof())
+					variable = floatValue;
+				else 
+					variable = input;
 			}
-			else if (std::holds_alternative<std::string>(variable))
-				variable = input;
-			else
-				throw std::runtime_error("Unsupported type for INPUT operation.");
+
+			auto it = std::find_if(variables_.begin(), variables_.end(),
+				[&](const Variable& var) { return variableNode->token.text == var.name; });
+
+			if (it != variables_.end()) 
+				it->value = variable;
+			else 
+				variables_.emplace_back(variable, variableNode->token.text, deepness_);
 		}
 		else if (op == TokenType::STATE)
 		{

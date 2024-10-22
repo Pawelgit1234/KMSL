@@ -61,7 +61,7 @@ namespace kmsl
 		bool break_loop_;
 		bool continue_loop_;
 		bool exit_program_;
-		bool is_printable_; // for console, for example: > a or > 4 * 4 # it would print the answer without "print"
+		bool is_printable_; // for console, for example: '> a' or '> 4 * 4' # it would print the answer without "print"
 
 		/* FLAGS */
 		bool logging_enabled_;
