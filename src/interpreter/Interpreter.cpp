@@ -138,7 +138,7 @@ namespace kmsl
 				else if (std::holds_alternative<std::string>(value))
 					t = Token(TokenType::STRING, std::get<std::string>(value), binaryOpNode->op.pos);
 				else if (std::holds_alternative<bool>(value))
-					t = Token(TokenType::BOOL, std::get<bool>(value) ? "true": "false", binaryOpNode->op.pos);
+					t = Token(TokenType::BOOL, std::get<bool>(value) ? "TRUE": "FALSE", binaryOpNode->op.pos);
 
 				UnarOpNode printNode(Token(TokenType::PRINT, "print", binaryOpNode->op.pos), std::make_unique<LiteralNode>(t));
 				visit(&printNode);
@@ -214,7 +214,11 @@ namespace kmsl
 				unarOpNode->op.type == TokenType::RCEIL ||
 				unarOpNode->op.type == TokenType::RFLOOR ||
 				unarOpNode->op.type == TokenType::READFILE ||
-				unarOpNode->op.type == TokenType::EXISTS))) && console_running_)
+				unarOpNode->op.type == TokenType::EXISTS ||
+				unarOpNode->op.type == TokenType::PLUS || 
+				unarOpNode->op.type == TokenType::MINUS || 
+				unarOpNode->op.type == TokenType::BIT_NOT || 
+				unarOpNode->op.type == TokenType::LOGICAL_NOT))) && console_running_)
 			{
 				is_printable_ = true;
 			}
@@ -374,7 +378,7 @@ namespace kmsl
 			else if (std::holds_alternative<std::string>(value))
 				std::cout << std::get<std::string>(value);
 			else if (std::holds_alternative<bool>(value))
-				std::cout << (std::get<bool>(value) ? "true" : "false");
+				std::cout << (std::get<bool>(value) ? "TRUE" : "FALSE");
 			else
 				throw std::runtime_error("Unsupported type for printing.");
 		}
@@ -1057,9 +1061,9 @@ namespace kmsl
 		}
 		case DataType::BOOL:
 		{
-			if (value == "true")
+			if (value == "TRUE")
 				return true;
-			else if (value == "false")
+			else if (value == "FALSE")
 				return false;
 			else
 				throw std::runtime_error("Invalid string value for boolean.");

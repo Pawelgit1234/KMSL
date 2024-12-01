@@ -46,9 +46,9 @@ namespace kmsl
                 Token token(token_type.second, matched_str, pos_);
 
                 
-                if (token.type != TokenType::SPACE || token.type == TokenType::COMMENT)
+                if (token.type != TokenType::SPACE && token.type != TokenType::COMMENT)
                 {
-                    if (token.type == TokenType::STRING) 
+                    if (token.type == TokenType::STRING)
                     {
                         token.text = token.text.substr(1, token.text.length() - 2); // removing the ""/'' from the string
 
@@ -56,11 +56,11 @@ namespace kmsl
                             if (token.text[i] == '\n' && i + 1 < token.text.size())
                                 token.text.erase(i + 1, 1); // deleting the space after \n; just a bug
                     }
-                    else if (token.text == "TRUE")
-                        token.text = "true";
-                    else if (token.text == "FALSE")
-                        token.text = "false";
-                    
+                    else if (token.text == "true")
+                        token.text = "TRUE";
+                    else if (token.text == "false")
+                        token.text = "FALSE";
+
                     tokens_.push_back(token);
                 }
                 return;

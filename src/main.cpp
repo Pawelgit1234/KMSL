@@ -11,6 +11,7 @@ int main(int argc, char* argv[])
 	po::options_description desc("Allowed options");
 
 	desc.add_options()
+		("version,v", "show the version of KMSL")
 		("help,h", "Show help message")
 		("log,l", "Enable logging")
 		("file", po::value<std::string>(), "File to execute");
@@ -32,7 +33,13 @@ int main(int argc, char* argv[])
 
 	if (vm.count("help"))
 	{
-		std::cout << desc << "\n";
+		std::cout << desc << std::endl;
+		return 0;
+	}
+
+	if (vm.count("version"))
+	{
+		std::cout << "KMSL 1.0.0" << std::endl;
 		return 0;
 	}
 

@@ -135,7 +135,7 @@ namespace kmsl
 			std::unique_ptr<BinaryOpNode> filesystemNode = parseFileAndDir();
 			return filesystemNode;
 		}
-		else if (match({ TokenType::LPAR, TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL, TokenType::YEAR, TokenType::MONTH, TokenType::WEEK, TokenType::DAY, TokenType::HOUR, TokenType::MINUTE, TokenType::SECOND, TokenType::MILLI, TokenType::SIN, TokenType::COS, TokenType::TAN, TokenType::ASIN, TokenType::ACOS, TokenType::ATAN, TokenType::ABS, TokenType::RCEIL, TokenType::RFLOOR, TokenType::PI, TokenType::E, TokenType::PHI, TokenType::READFILE, TokenType::EXISTS, TokenType::GETX, TokenType::GETY, TokenType::STATE, TokenType::RANDOM }).type != TokenType::INVALID)
+		else if (match({ TokenType::LPAR, TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL, TokenType::YEAR, TokenType::MONTH, TokenType::WEEK, TokenType::DAY, TokenType::HOUR, TokenType::MINUTE, TokenType::SECOND, TokenType::MILLI, TokenType::SIN, TokenType::COS, TokenType::TAN, TokenType::ASIN, TokenType::ACOS, TokenType::ATAN, TokenType::ABS, TokenType::RCEIL, TokenType::RFLOOR, TokenType::PI, TokenType::E, TokenType::PHI, TokenType::READFILE, TokenType::EXISTS, TokenType::GETX, TokenType::GETY, TokenType::STATE, TokenType::RANDOM, TokenType::PLUS, TokenType::MINUS, TokenType::LOGICAL_NOT, TokenType::BIT_NOT }).type != TokenType::INVALID)
 		{
 			pos_--;
 			std::unique_ptr<AstNode> expressionNode = parseExpression();
