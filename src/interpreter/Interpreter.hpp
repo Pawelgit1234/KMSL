@@ -1,11 +1,18 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include <variant>
 #include <string>
 #include <unordered_map>
 #include <memory>
 #include <sstream>
 #include <iostream>
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <filesystem>
+#include <cmath>
 
 #include "../AST/ast.hpp"
 #include "../lexer/Lexer.hpp"
@@ -61,12 +68,13 @@ namespace kmsl
 		bool break_loop_;
 		bool continue_loop_;
 		bool exit_program_;
-		bool is_printable_; // for console, for example: '> a' or '> 4 * 4' # it would print the answer without "print"
+		bool is_printable_; // for console, for example: '> a' or '> 4 * 4' # it will print the answer without "print"
 
 		/* FLAGS */
 		bool logging_enabled_;
 		bool console_running_;
 
 		unsigned short deepness_;
+		variant temp_var_; // workaround: fix the error with the reference to VAR-FUNC (like YEAR, RANDOM etc.)
 	};
 }

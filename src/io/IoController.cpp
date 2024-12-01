@@ -1,4 +1,5 @@
 ﻿#include "IoController.hpp"
+#include <iostream>
 
 namespace kmsl
 {
@@ -11,7 +12,7 @@ namespace kmsl
         int startY = startPos.y;
 
         int deltaX = x - startX;
-        int deltaY = y - startY;
+        int deltaY = y - startY; 
 
         int steps = 100;
         float stepTime = t / steps; 

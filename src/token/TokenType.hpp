@@ -12,8 +12,16 @@ namespace kmsl
 		WHILE, FOR, BREAK, CONTINUE,
 		PRINT, INPUT,
 
+		/* Extra */
+		YEAR, MONTH, WEEK, DAY, HOUR, MINUTE, SECOND, MILLI, // time
+		SIN, COS, TAN, ACOS, ASIN, ATAN, ABS, RCEIL, RFLOOR, PI, E, PHI,  // complicated math operations and constans
+		READFILE, WRITEFILE, APPENDFILE, CREATEFILE, // file operations
+		CREATEDIR, // dir operations
+		REMOVE, COPY, RENAME, EXISTS, // dir and file operations
+		WAIT, EXIT, RANDOM, OS, DO, // other
+
 		/* Mouse & Keyboard */
-		MOVE, DMOVE, SCROLL, TYPE, PRESS, HOLD, RELEASE, GETX, GETY,
+		MOVE, DMOVE, SCROLL, TYPE, PRESS, HOLD, RELEASE, GETX, GETY, STATE,
 		
 		/* Operators */
 		PLUS, MINUS, MULTIPLY, DIVIDE, FLOOR, MODULO, ROOT, LOG, POWER, PLUS_ONE, MINUS_ONE,
@@ -34,8 +42,6 @@ namespace kmsl
         SPACE, LINE_END, COMMENT,
 		INVALID,
 		COMMA,
-		STATE, WAIT,
-		EXIT,
 	};
 
 	extern std::vector<std::pair<std::string, TokenType>> token_list;

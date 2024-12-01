@@ -124,13 +124,18 @@ namespace kmsl
 			std::unique_ptr<KeyNode> keyNode(std::make_unique<KeyNode>(type, parseArguments()));
 			return keyNode;
 		}
-		else if (match({ TokenType::WAIT }).type != TokenType::INVALID)
+		else if (match({ TokenType::WAIT, TokenType::OS, TokenType::DO,TokenType::CREATEFILE, TokenType::REMOVE, TokenType::CREATEDIR }).type != TokenType::INVALID)
 		{
 			Token oper = current_token_;
-			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, std::make_unique<LiteralNode>(require({ TokenType::VARIABLE, TokenType::STRING, TokenType::FLOAT, TokenType::INT }))));
+			std::unique_ptr<UnarOpNode> unarNode(std::make_unique<UnarOpNode>(oper, parseExpression()));
 			return unarNode;
 		}
-		else if (match({ TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL }).type != TokenType::INVALID)
+		else if (match({ TokenType::WRITEFILE, TokenType::APPENDFILE, TokenType::COPY, TokenType::RENAME }).type != TokenType::INVALID) // Binar
+		{
+			std::unique_ptr<BinaryOpNode> filesystemNode = parseFileAndDir();
+			return filesystemNode;
+		}
+		else if (match({ TokenType::LPAR, TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL, TokenType::YEAR, TokenType::MONTH, TokenType::WEEK, TokenType::DAY, TokenType::HOUR, TokenType::MINUTE, TokenType::SECOND, TokenType::MILLI, TokenType::SIN, TokenType::COS, TokenType::TAN, TokenType::ASIN, TokenType::ACOS, TokenType::ATAN, TokenType::ABS, TokenType::RCEIL, TokenType::RFLOOR, TokenType::PI, TokenType::E, TokenType::PHI, TokenType::READFILE, TokenType::EXISTS, TokenType::GETX, TokenType::GETY, TokenType::STATE, TokenType::RANDOM }).type != TokenType::INVALID)
 		{
 			pos_--;
 			std::unique_ptr<AstNode> expressionNode = parseExpression();
@@ -204,6 +209,22 @@ namespace kmsl
 		);
 
 		return typeNode;
+	}
+
+	std::unique_ptr<BinaryOpNode> Parser::parseFileAndDir()
+	{
+		Token token = current_token_;
+		std::unique_ptr<AstNode> left = parseExpression();
+		require({ TokenType::COMMA });
+		std::unique_ptr<AstNode> right = parseExpression();
+
+		std::unique_ptr<BinaryOpNode> filesystemNode = std::make_unique<BinaryOpNode>(
+			token,
+			std::move(left),
+			std::move(right)
+		);
+
+		return filesystemNode;
 	}
 
 	std::vector<std::unique_ptr<AstNode>> Parser::parseArguments()
@@ -349,7 +370,7 @@ namespace kmsl
 
 	std::unique_ptr<AstNode> Parser::parseFactor()
 	{
-		if (match({ TokenType::PLUS, TokenType::MINUS, TokenType::LOGICAL_NOT, TokenType::BIT_NOT }).type != TokenType::INVALID)
+		if (match({ TokenType::PLUS, TokenType::MINUS, TokenType::LOGICAL_NOT, TokenType::BIT_NOT, TokenType::SIN, TokenType::COS, TokenType::TAN, TokenType::ACOS, TokenType::ASIN, TokenType::ATAN, TokenType::ABS, TokenType::RCEIL, TokenType::RFLOOR }).type != TokenType::INVALID)
 		{
 			Token oper = current_token_;
 			std::unique_ptr<AstNode> node = parseFactor();
@@ -363,9 +384,9 @@ namespace kmsl
 		}
 		else if (match({ TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL }).type != TokenType::INVALID)
 			return std::make_unique<LiteralNode>(current_token_);
-		else if (match({ TokenType::VARIABLE, TokenType::GETX, TokenType::GETY }).type != TokenType::INVALID)
+		else if (match({ TokenType::VARIABLE, TokenType::GETX, TokenType::GETY, TokenType::RANDOM, TokenType::PI, TokenType::E, TokenType::PHI, TokenType::YEAR, TokenType::MONTH, TokenType::WEEK, TokenType::DAY, TokenType::HOUR, TokenType::MINUTE, TokenType::SECOND, TokenType::MILLI }).type != TokenType::INVALID)
 			return std::make_unique<VariableNode>(current_token_);
-		else if (match({ TokenType::STATE }).type != TokenType::INVALID)
+		else if (match({ TokenType::STATE, TokenType::READFILE,  TokenType::EXISTS, }).type != TokenType::INVALID)
 		{
 			Token stateToken = current_token_;
 			require({ TokenType::STRING });

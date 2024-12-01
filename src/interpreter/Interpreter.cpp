@@ -107,11 +107,21 @@ namespace kmsl
 				UnarOpNode printNode(Token(TokenType::PRINT, "print", literalNode->token.pos), std::make_unique<LiteralNode>(*literalNode));
 				visit(&printNode);
 			}
-
-			return visit(literalNode);
+			else
+				return visit(literalNode);
 		}
 		else if (auto unarOpNode = dynamic_cast<UnarOpNode*>(node))
-			return visit(unarOpNode);
+		{
+			if (console_running_ && is_printable_)
+			{
+				is_printable_ = false;
+
+				UnarOpNode printNode(Token(TokenType::PRINT, "print", unarOpNode->op.pos), std::make_unique<UnarOpNode>(std::move(*unarOpNode)));
+				visit(&printNode);
+			}
+			else
+				return visit(unarOpNode);
+		}
 		else if (auto binaryOpNode = dynamic_cast<BinaryOpNode*>(node))
 		{
 			if (console_running_ && is_printable_)
@@ -164,6 +174,7 @@ namespace kmsl
 			}
 
 			auto binaryOpNode = dynamic_cast<BinaryOpNode*>(stmt.get());
+			auto unarOpNode = dynamic_cast<UnarOpNode*>(stmt.get());
 
 			if (dynamic_cast<VariableNode*>(stmt.get()) || dynamic_cast<LiteralNode*>(stmt.get()) ||
 				(binaryOpNode &&
@@ -192,11 +203,21 @@ namespace kmsl
 				binaryOpNode->op.type == TokenType::LESS_THAN ||
 				binaryOpNode->op.type == TokenType::GREATER_THAN ||
 				binaryOpNode->op.type == TokenType::LESS_THAN_OR_EQUAL ||
-				binaryOpNode->op.type == TokenType::GREATER_THAN_OR_EQUAL)) && console_running_)
+				binaryOpNode->op.type == TokenType::GREATER_THAN_OR_EQUAL)||
+				(unarOpNode && (unarOpNode->op.type == TokenType::SIN ||
+				unarOpNode->op.type == TokenType::COS ||
+				unarOpNode->op.type == TokenType::TAN ||
+				unarOpNode->op.type == TokenType::ASIN ||
+				unarOpNode->op.type == TokenType::ACOS ||
+				unarOpNode->op.type == TokenType::ATAN ||
+				unarOpNode->op.type == TokenType::ABS ||
+				unarOpNode->op.type == TokenType::RCEIL ||
+				unarOpNode->op.type == TokenType::RFLOOR ||
+				unarOpNode->op.type == TokenType::READFILE ||
+				unarOpNode->op.type == TokenType::EXISTS))) && console_running_)
 			{
 				is_printable_ = true;
 			}
-
 
 			visitNode(stmt.get());
 		}
@@ -219,27 +240,97 @@ namespace kmsl
 
 			UnarOpNode printNode(Token(TokenType::PRINT, "print", node->token.pos), std::make_unique<VariableNode>(*node));
 			visit(&printNode);
+			return temp_var_;
 		}
 		else if (node->token.type == TokenType::GETX || node->token.type == TokenType::GETY)
 		{
 			int x, y;
 			IoController::getMouseCoordinates(x, y);
 
-			variant result;
-
 			switch (node->token.type)
 			{
 			case TokenType::GETX:
-				result = x;
+				temp_var_ = x;
 			case TokenType::GETY:
-				result = y;
+				temp_var_ = y;
 			}
 
-			return result;
+			return temp_var_;
+		}
+		else if (node->token.type == TokenType::RANDOM)
+		{
+			temp_var_ = std::rand();
+			return temp_var_;
+		}
+		else if (node->token.type == TokenType::MONTH || node->token.type == TokenType::WEEK ||
+			node->token.type == TokenType::DAY || node->token.type == TokenType::HOUR ||
+			node->token.type == TokenType::MINUTE || node->token.type == TokenType::SECOND ||
+			node->token.type == TokenType::MILLI || node->token.type == TokenType::YEAR)
+		{
+			auto now = std::chrono::system_clock::now();
+			std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
+			std::tm local_time;
+			localtime_s(&local_time, &now_time_t);
+
+			switch (node->token.type)
+			{
+			case TokenType::YEAR:
+				temp_var_ = local_time.tm_year + 1900;
+				break;
+			case TokenType::MONTH:
+				temp_var_ = local_time.tm_mon + 1;
+				break;
+			case TokenType::DAY:
+				temp_var_ = local_time.tm_mday;
+				break;
+			case TokenType::HOUR:
+				temp_var_ = local_time.tm_hour;
+				break;
+			case TokenType::MINUTE:
+				temp_var_ = local_time.tm_min;
+				break;
+			case TokenType::SECOND:
+				temp_var_ = local_time.tm_sec;
+				break;
+			case TokenType::MILLI:
+			{
+				auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
+					now.time_since_epoch()) % 1000;
+				temp_var_ = static_cast<int>(milliseconds.count());
+				break;
+			}
+			case TokenType::WEEK:
+			{
+				int yday = local_time.tm_yday;
+				temp_var_ = yday / 7 + 1;
+				break;
+			}
+			}
+
+			return temp_var_;
+		}
+		else if (node->token.type == TokenType::PI)
+		{
+			float pi = M_PI;
+			temp_var_ = pi;
+			return temp_var_;
+		}
+		else if (node->token.type == TokenType::PHI)
+		{
+			float phi = 1.61803399;
+			temp_var_ = phi;
+			return temp_var_;
+		}
+		else if (node->token.type == TokenType::E)
+		{
+			float e = M_E;
+			temp_var_ = e;
+			return temp_var_;
 		}
 
 		auto it = std::find_if(variables_.begin(), variables_.end(),
 			[&](const Variable& var) { return var.name == node->token.text; });
+
 
 		if (it != variables_.end())
 			return it->value;
@@ -373,6 +464,123 @@ namespace kmsl
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(time * 1000)));
 		}
+		else if (op == TokenType::OS)
+		{
+			variant operand = visitNode(node->operand.get());
+			std::string command;
+
+			if (std::holds_alternative<std::string>(operand))
+				command = std::get<std::string>(operand);
+
+			std::system(command.c_str());
+		}
+		else if (op == TokenType::SIN || op == TokenType::COS || op == TokenType::TAN || op == TokenType::ACOS || op == TokenType::ASIN || op == TokenType::ATAN || op == TokenType::ABS || op == TokenType::RCEIL || op == TokenType::RFLOOR)
+		{
+			variant operand = visitNode(node->operand.get());
+			float n;
+
+			if (std::holds_alternative<int>(operand))
+				n = static_cast<float>(std::get<int>(operand));
+			else if (std::holds_alternative<float>(operand))
+				n = std::get<float>(operand);
+
+			switch (op)
+			{
+			case TokenType::SIN:
+				return std::abs(std::sin(n)) < 1e-7 ? 0.0f : std::sin(n);
+			case TokenType::COS:
+				return std::cos(n);
+			case TokenType::TAN:
+				return std::abs(std::tan(n)) < 1e-7 ? 0.0f : std::tan(n);
+			case TokenType::ASIN:
+				return std::asin(n);
+			case TokenType::ACOS:
+				return std::acos(n);
+			case TokenType::ATAN:
+				return std::atan(n);
+			case TokenType::ABS:
+				return std::abs(n);
+			case TokenType::RCEIL:
+				return (int) std::ceil(n);
+			case TokenType::RFLOOR:
+				return (int) std::floor(n);
+			default:
+				break;
+			}
+		}
+		else if (op == TokenType::CREATEFILE)
+		{
+			variant operand = visitNode(node->operand.get());
+			std::string filename;
+
+			if (std::holds_alternative<std::string>(operand))
+				filename = std::get<std::string>(operand);
+
+			std::ofstream outfile(filename);
+			outfile.close();
+		}
+		else if (op == TokenType::REMOVE)
+		{
+			variant operand = visitNode(node->operand.get());
+			std::string filename;
+
+			if (std::holds_alternative<std::string>(operand))
+				filename = std::get<std::string>(operand);
+
+			std::filesystem::remove(filename);
+		}
+		else if (op == TokenType::READFILE)
+		{
+			variant operand = visitNode(node->operand.get());
+			std::string filename;
+
+			if (std::holds_alternative<std::string>(operand))
+				filename = std::get<std::string>(operand);
+
+			kmsl::FileReader fr(filename);
+			std::string text = fr.read();
+
+			return text;
+		}
+		else if (op == TokenType::EXISTS)
+		{
+			variant operand = visitNode(node->operand.get());
+			std::string filename;
+
+			if (std::holds_alternative<std::string>(operand))
+				filename = std::get<std::string>(operand);
+
+			return std::filesystem::exists(filename);
+		}
+		else if (op == TokenType::CREATEDIR)
+		{
+			variant operand = visitNode(node->operand.get());
+			std::string dirname;
+
+			if (std::holds_alternative<std::string>(operand))
+				dirname = std::get<std::string>(operand);
+
+			std::filesystem::create_directory(dirname);
+		}
+		else if (op == TokenType::DO)
+		{
+			variant operand = visitNode(node->operand.get());
+			std::string code;
+
+			if (std::holds_alternative<std::string>(operand))
+				code = std::get<std::string>(operand);
+
+			Lexer l(code);
+			std::vector<Token> tokens = l.scanTokens();
+			Parser p(tokens);
+			std::unique_ptr<BlockNode> ast = p.parse();
+			SemanticAnalyzer s(ast);
+			if (console_running_)
+				s.set_symbols(&symbols_);
+			s.analyze();
+			visitNode(ast->getStatements()[0].get());
+		}
+
 		return variant();
 	}
 
@@ -382,7 +590,6 @@ namespace kmsl
 		{
 		case TokenType::ASSIGN:
 		{
-
 			auto variableNode = dynamic_cast<VariableNode*>(node->leftOperand.get());
 
 			auto it = std::find_if(variables_.begin(), variables_.end(), 
@@ -390,7 +597,7 @@ namespace kmsl
 
 			variant valueNode = visitNode(node->rightOperand.get());
 
-			if (it != variables_.end())
+			if (it != variables_.end()) 
 				it->value = valueNode;
 			else
 				variables_.emplace_back(valueNode, variableNode->token.text, deepness_);
@@ -468,43 +675,38 @@ namespace kmsl
 
 				visit(variableNode) = var;
 			}
-			else if (std::holds_alternative<std::string>(value) && std::holds_alternative<std::string>(valueNode))
-			{
-				std::string& var = std::get<std::string>(value);
-				std::string val = std::get<std::string>(valueNode);
-
-				switch (node->op.type)
-				{
-				case TokenType::PLUS_ASSIGN:
-					var += val;
-					break;
-				default:
-					throw std::runtime_error("Unsupported assignment operation for strings.");
-				}
-			}
-			else if ((std::holds_alternative<std::string>(value) && std::holds_alternative<int>(valueNode)) ||
-				(std::holds_alternative<int>(value) && std::holds_alternative<std::string>(valueNode)))
+			else if (((std::holds_alternative<std::string>(value) && std::holds_alternative<int>(valueNode)) ||
+				(std::holds_alternative<int>(value) && std::holds_alternative<std::string>(valueNode))) && node->op.type == TokenType::MULTIPLY_ASSIGN)
 			{
 				std::string& var = std::holds_alternative<std::string>(value) ? std::get<std::string>(value) : std::get<std::string>(valueNode);
 				int times = std::holds_alternative<int>(value) ? std::get<int>(value) : std::get<int>(valueNode);
 
-				switch (node->op.type)
-				{
-				case TokenType::MULTIPLY_ASSIGN:
-				{
-					if (times < 0)
-						throw std::runtime_error("Cannot multiply string by a negative number.");
+				if (times < 0)
+					throw std::runtime_error("Cannot multiply string by a negative number.");
 
-					std::string string = var;
-					for (int i = 1; i < times; i++)
-						var += string;
-					break;
-				}
-				default:
-					throw std::runtime_error("Unsupported assignment operation for strings.");
-				}
+				std::string string = var;
+				for (int i = 1; i < times; i++)
+					var += string;
 			}
+			else if ((std::holds_alternative<std::string>(value) && std::holds_alternative<std::string>(valueNode)) ||
+					(std::holds_alternative<std::string>(value) && std::holds_alternative<int>(valueNode)) ||
+					(std::holds_alternative<std::string>(value) && std::holds_alternative<float>(valueNode)) ||
+					(std::holds_alternative<std::string>(value) && std::holds_alternative<bool>(valueNode)))
+			{
+				std::string& var = std::get<std::string>(value);
+				std::string val;
 
+				if (std::holds_alternative<std::string>(valueNode))
+					val = std::get<std::string>(valueNode);
+				else if (std::holds_alternative<int>(valueNode))
+					val = std::to_string(std::get<int>(valueNode));
+				else if (std::holds_alternative<float>(valueNode))
+					val = std::to_string(std::get<float>(valueNode));
+				else if (std::holds_alternative<bool>(valueNode))
+					val = (std::get<bool>(valueNode)) ? "TRUE" : "FALSE";
+
+				var += val;
+			}
 			else
 				throw std::runtime_error("Unsupported types for assignment operation.");
 
@@ -619,44 +821,59 @@ namespace kmsl
 				default: throw std::runtime_error("Unsupported operation for boolean.");
 				}
 			}
-			else if (std::holds_alternative<std::string>(leftValue) && std::holds_alternative<std::string>(rightValue))
+			else if (((std::holds_alternative<std::string>(leftValue) && std::holds_alternative<int>(rightValue)) ||
+				(std::holds_alternative<int>(leftValue) && std::holds_alternative<std::string>(rightValue))) && node->op.type == TokenType::MULTIPLY)
 			{
-				std::string left = std::get<std::string>(leftValue);
-				std::string right = std::get<std::string>(rightValue);
+				std::string var = std::holds_alternative<std::string>(leftValue) ? std::get<std::string>(leftValue) : std::get<std::string>(rightValue);
+				int times = std::holds_alternative<int>(leftValue) ? std::get<int>(leftValue) : std::get<int>(rightValue);
+
+				if (times < 0)
+					throw std::runtime_error("Cannot multiply string by a negative number.");
+
+				std::string string = var;
+				for (int i = 1; i < times; i++)
+					var += string;
+				return var;
+			}
+			else if ((std::holds_alternative<std::string>(leftValue) && std::holds_alternative<std::string>(rightValue)) ||
+					(std::holds_alternative<std::string>(leftValue) && std::holds_alternative<int>(rightValue)) ||
+					(std::holds_alternative<int>(leftValue) && std::holds_alternative<std::string>(rightValue)) ||
+					(std::holds_alternative<std::string>(leftValue) && std::holds_alternative<float>(rightValue)) ||
+					(std::holds_alternative<float>(leftValue) && std::holds_alternative<std::string>(rightValue)) ||
+					(std::holds_alternative<std::string>(leftValue) && std::holds_alternative<bool>(rightValue)) ||
+					(std::holds_alternative<bool>(leftValue) && std::holds_alternative<std::string>(rightValue)))
+			{
+				std::string left;
+				std::string right;
+
+				if (std::holds_alternative<std::string>(leftValue))
+					left = std::get<std::string>(leftValue);
+				else if (std::holds_alternative<int>(leftValue))
+					left = std::to_string(std::get<int>(leftValue));
+				else if (std::holds_alternative<float>(leftValue))
+					left = std::to_string(std::get<float>(leftValue));
+				else if (std::holds_alternative<bool>(leftValue))
+					left = (std::get<bool>(leftValue)) ? "TRUE" : "FALSE";
+
+				if (std::holds_alternative<std::string>(rightValue))
+					right = std::get<std::string>(rightValue);
+				else if (std::holds_alternative<int>(rightValue))
+					right = std::to_string(std::get<int>(rightValue));
+				else if (std::holds_alternative<float>(rightValue))
+					right = std::to_string(std::get<float>(rightValue));
+				else if (std::holds_alternative<bool>(rightValue))
+					right = (std::get<bool>(rightValue)) ? "TRUE" : "FALSE";
 
 				switch (node->op.type)
 				{
 				case TokenType::PLUS: return left + right;
 				case TokenType::EQUALS: return left == right;
 				case TokenType::NOT_EQUALS: return left != right;
-				case TokenType::LESS_THAN: return left < right;
-				case TokenType::GREATER_THAN: return left > right;
-				case TokenType::LESS_THAN_OR_EQUAL: return left <= right;
-				case TokenType::GREATER_THAN_OR_EQUAL: return left >= right;
+				case TokenType::LESS_THAN: return left.length() < right.length();
+				case TokenType::GREATER_THAN: return left.length() > right.length();
+				case TokenType::LESS_THAN_OR_EQUAL: return left.length() <= right.length();
+				case TokenType::GREATER_THAN_OR_EQUAL: return left.length() >= right.length();
 				default: throw std::runtime_error("Unsupported operation for strings.");
-				}
-			}
-			else if ((std::holds_alternative<std::string>(leftValue) && std::holds_alternative<int>(rightValue)) ||
-				(std::holds_alternative<int>(leftValue) && std::holds_alternative<std::string>(rightValue)))
-			{
-				std::string var = std::holds_alternative<std::string>(leftValue) ? std::get<std::string>(leftValue) : std::get<std::string>(rightValue);
-				int times = std::holds_alternative<int>(leftValue) ? std::get<int>(leftValue) : std::get<int>(rightValue);
-				
-				switch (node->op.type)
-				{
-				case TokenType::MULTIPLY:
-				{
-					if (times < 0)
-						throw std::runtime_error("Cannot multiply string by a negative number.");
-
-					std::string string = var;
-					for (int i = 1; i < times; i++)
-						var += string;
-					return var;
-					break;
-				}
-				default:
-					throw std::runtime_error("Unsupported assignment operation for strings.");
 				}
 			}
 			else
@@ -699,6 +916,55 @@ namespace kmsl
 				}
 			}
 		}
+		case TokenType::WRITEFILE:
+		case TokenType::APPENDFILE:
+		case TokenType::COPY:
+		case TokenType::RENAME:
+		{
+			variant left = visitNode(node->leftOperand.get());
+			variant right = visitNode(node->rightOperand.get());
+
+			std::string filename, second;
+
+			if (std::holds_alternative<std::string>(left) && std::holds_alternative<std::string>(right))
+			{
+				filename = std::get<std::string>(left);
+				second = std::get<std::string>(right);
+			}
+
+			switch (node->op.type)
+			{
+			case TokenType::WRITEFILE:
+			{
+				std::ofstream file(filename);
+
+				if (!file.is_open())
+					throw std::runtime_error("File '" + filename + "' cannot be open");
+
+				file << second;
+				file.close();
+				break;
+			}
+			case TokenType::APPENDFILE:
+			{
+				std::ofstream file;
+				file.open(filename, std::ios_base::app);
+
+				if (!file.is_open())
+					throw std::runtime_error("File '" + filename + "' cannot be open");
+
+				file << second;
+				file.close();
+				break;
+			}
+			case TokenType::COPY:
+				std::filesystem::copy(filename, second);
+				break;
+			case TokenType::RENAME:
+				std::filesystem::rename(filename, second);
+				break;
+			}
+		}
 
 		}
 		return variant();
@@ -732,7 +998,6 @@ namespace kmsl
 
 			if (!std::holds_alternative<bool>(conditionResult)) 
 				throw std::runtime_error("The condition in for should be a boolean expression!");
-
 			if (!std::get<bool>(conditionResult) || break_loop_ || exit_program_)
 			{
 				break_loop_ = false;
@@ -876,7 +1141,6 @@ namespace kmsl
 
 			if (std::holds_alternative<int>(yValue))
 				y = std::get<int>(yValue);
-
 
 			if (node->tNode)
 			{

@@ -54,7 +54,20 @@ namespace kmsl
 
 	void SemanticAnalyzer::visit(VariableNode* node)
 	{
-		if (node->token.type != TokenType::GETX && node->token.type != TokenType::GETY)
+		if (node->token.type != TokenType::GETX &&
+			node->token.type != TokenType::GETY &&
+			node->token.type != TokenType::RANDOM &&
+			node->token.type != TokenType::PI &&
+			node->token.type != TokenType::E &&
+			node->token.type != TokenType::PHI &&
+			node->token.type != TokenType::YEAR &&
+			node->token.type != TokenType::MONTH &&
+			node->token.type != TokenType::WEEK &&
+			node->token.type != TokenType::DAY &&
+			node->token.type != TokenType::HOUR &&
+			node->token.type != TokenType::MINUTE &&
+			node->token.type != TokenType::SECOND &&
+			node->token.type != TokenType::MILLI)
 		{
 			if (in_console_)
 			{
@@ -74,7 +87,31 @@ namespace kmsl
 	{
 		TokenType op = node->op.type;
 		
-		if (op == TokenType::PLUS_ONE || op == TokenType::MINUS_ONE || op == TokenType::PRINT || op == TokenType::PLUS || op == TokenType::MINUS || op == TokenType::LOGICAL_NOT || op == TokenType::BIT_NOT || op == TokenType::WAIT || op == TokenType::STATE)
+		if (op == TokenType::PLUS_ONE ||
+			op == TokenType::MINUS_ONE ||
+			op == TokenType::PRINT ||
+			op == TokenType::PLUS ||
+			op == TokenType::MINUS ||
+			op == TokenType::LOGICAL_NOT ||
+			op == TokenType::BIT_NOT ||
+			op == TokenType::WAIT ||
+			op == TokenType::STATE ||
+			op == TokenType::OS ||
+			op == TokenType::DO ||
+			op == TokenType::SIN ||
+			op == TokenType::COS ||
+			op == TokenType::TAN ||
+			op == TokenType::ACOS ||
+			op == TokenType::ASIN ||
+			op == TokenType::ATAN ||
+			op == TokenType::ABS ||
+			op == TokenType::RCEIL ||
+			op == TokenType::RFLOOR ||
+			op == TokenType::READFILE ||
+			op == TokenType::CREATEFILE ||
+			op == TokenType::REMOVE ||
+			op == TokenType::EXISTS ||
+			op == TokenType::CREATEDIR)
 			visitNode(node->operand.get());
 		else if (op == TokenType::INPUT)
 		{
@@ -203,6 +240,10 @@ namespace kmsl
 		case TokenType::NOT_EQUALS:
 		case TokenType::TYPE:
 		case TokenType::SCROLL:
+		case TokenType::WRITEFILE:
+		case TokenType::APPENDFILE:
+		case TokenType::COPY:
+		case TokenType::RENAME:
 			visitNode(node->leftOperand.get());
 			visitNode(node->rightOperand.get());
 			break;
