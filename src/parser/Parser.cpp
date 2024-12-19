@@ -2,8 +2,8 @@
 
 namespace kmsl
 {
-	Parser::Parser(std::vector<Token> tokens)
-		: tokens_(tokens), pos_(0), current_token_(tokens_[pos_]) {}
+	Parser::Parser(std::vector<Token> tokens, ErrorHandler& error_handler)
+		: tokens_(tokens), pos_(0), current_token_(tokens_[pos_]), error_handler_(error_handler) {}
 
 	Parser::~Parser()
 	{
@@ -13,6 +13,9 @@ namespace kmsl
 	std::unique_ptr<BlockNode> Parser::parse()
 	{
 		std::unique_ptr<BlockNode> root = std::make_unique<BlockNode>();
+
+		if (!checkAllPars())
+			return root;
 
 		while (pos_ < tokens_.size())
 		{
@@ -30,6 +33,7 @@ namespace kmsl
 		if (pos_ < tokens_.size())
 		{
 			const Token currentToken = tokens_[pos_];
+
 			auto it = std::find(types.begin(), types.end(), currentToken.type);
 			if (it != types.end())
 			{
@@ -39,14 +43,14 @@ namespace kmsl
 			}
 		}
 		
-		return Token(TokenType::INVALID, "", pos_);
+		return Token(TokenType::INVALID, "", current_token_.pos);
 	}
 
 	Token Parser::require(std::vector<TokenType> types)
 	{
 		const Token token = match(types);
 		if (token.type == TokenType::INVALID)
-			throw std::runtime_error("Error on pos " + std::to_string(pos_));
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "Token on wrong postiton", token.pos);
 
 		return token;
 	}
@@ -58,6 +62,12 @@ namespace kmsl
 			});
 
 		int stop_index = std::distance(tokens_.begin(), it);
+		
+		if (stop_index == tokens_.size())
+		{
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "Token on wrong postiton", current_token_.pos);
+			return;
+		}
 
 		for (int i = pos_; i < stop_index; i++)
 			if (std::find(remove_types.begin(), remove_types.end(), tokens_[i].type) != remove_types.end())
@@ -141,7 +151,14 @@ namespace kmsl
 			std::unique_ptr<AstNode> expressionNode = parseExpression();
 			return expressionNode;
 		}
-		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
+
+		if (pos_ < tokens_.size())
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "Expectet another value", tokens_[pos_].pos);
+		else
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "Expectet another value", current_token_.pos);
+
+		pos_++;
+		return std::unique_ptr<AstNode>();
 	}
 
 	std::unique_ptr<AstNode> Parser::parseVariable()
@@ -166,8 +183,6 @@ namespace kmsl
 		}
 		else
 			return varNode;
-
-		throw std::runtime_error("On positon" + std::to_string(pos_) + "expected an another value.");
 	}
 
 	std::unique_ptr<MouseNode> Parser::parseMouse()
@@ -241,10 +256,18 @@ namespace kmsl
 	std::unique_ptr<IfNode> Parser::parseIf()
 	{
 		require({ TokenType::LPAR });
+		Token posToken = current_token_;
 		removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
 		std::unique_ptr<AstNode> conditionNode = parseExpression();
 		require({ TokenType::RPAR });
-		require({ TokenType::LBRACE});
+
+		if (require({ TokenType::LBRACE }).type == TokenType::INVALID)
+			return std::make_unique<IfNode>(
+				std::move(std::unique_ptr<AstNode>()),
+				std::move(std::unique_ptr<AstNode>()),
+				std::move(std::unique_ptr<AstNode>()),
+				Token()
+			);
 
 		std::unique_ptr<BlockNode> thenNode = std::make_unique<BlockNode>();
 		while (match({ TokenType::RBRACE }).type == TokenType::INVALID)
@@ -261,7 +284,17 @@ namespace kmsl
 		auto parseElseBlock = [&](std::unique_ptr<BlockNode>& elseNode)
 		{
 			removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
-			require({ TokenType::LBRACE });
+
+			if (require({ TokenType::LBRACE }).type == TokenType::INVALID)
+			{
+				error_handler_.report()
+				return std::make_unique<IfNode>(
+					std::move(std::unique_ptr<AstNode>()),
+					std::move(std::unique_ptr<AstNode>()),
+					std::move(std::unique_ptr<AstNode>()),
+					current_token_
+				);
+			}
 
 			while (match({ TokenType::RBRACE }).type == TokenType::INVALID)
 			{
@@ -287,7 +320,8 @@ namespace kmsl
 		std::unique_ptr<IfNode> ifNode = std::make_unique<IfNode>(
 			std::move(conditionNode),
 			std::move(thenNode),
-			std::move(elseNode)
+			std::move(elseNode),
+			current_token_
 		);
 		return ifNode;
 	}
@@ -300,6 +334,7 @@ namespace kmsl
 		require({ TokenType::VARIABLE });
 		std::unique_ptr<AstNode> initializerNode = parseVariable();
 		require({ TokenType::COMMA });
+		Token posToken = current_token_;
 		std::unique_ptr<AstNode> conditionNode = parseExpression();
 		require({ TokenType::COMMA });
 		require({ TokenType::VARIABLE });
@@ -323,7 +358,8 @@ namespace kmsl
 			std::move(initializerNode),
 			std::move(conditionNode),
 			std::move(incrementNode),
-			std::move(bodyNode)
+			std::move(bodyNode),
+			posToken
 		);
 		return forNode;
 	}
@@ -331,6 +367,7 @@ namespace kmsl
 	std::unique_ptr<WhileNode> Parser::parseWhile()
 	{
 		require({ TokenType::LPAR });
+		Token posToken = current_token_;
 		removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
 		std::unique_ptr<AstNode> conditionNode = parseExpression();
 		require({ TokenType::RPAR });
@@ -349,7 +386,8 @@ namespace kmsl
 
 		std::unique_ptr<WhileNode> whileNode = std::make_unique<WhileNode>(
 			std::move(conditionNode),
-			std::move(bodyNode)
+			std::move(bodyNode),
+			posToken
 		);
 
 		return whileNode;
@@ -393,9 +431,10 @@ namespace kmsl
 			return std::make_unique<UnarOpNode>(stateToken, std::make_unique<LiteralNode>(current_token_));
 		}
 
-		throw std::runtime_error("Incorrect Token");
+		error_handler_.report(ErrorType::SYNTAX_ERROR, "Expectet another value", current_token_.pos);
+		return std::unique_ptr<AstNode>();
 	}
-
+	
 	std::unique_ptr<AstNode> Parser::parseExpression()
 	{
 		std::unique_ptr<AstNode> node = parseTerm();
@@ -407,5 +446,31 @@ namespace kmsl
 		}
 
 		return node;
+	}
+
+	bool Parser::checkAllPars()
+	{
+		std::vector<Token> pars; // pars and braces 
+
+		for (const auto& t : tokens_)
+		{
+			if (t.type == TokenType::LPAR || t.type == TokenType::LBRACE)
+				pars.push_back(t);
+			else if (pars.size() != 0)
+				if ((t.type == TokenType::RPAR && pars.back().type == TokenType::LPAR) ||
+					(t.type == TokenType::RBRACE && pars.back().type == TokenType::LBRACE))
+					pars.pop_back();
+				else if ((t.type == TokenType::RPAR && pars.back().type == TokenType::LBRACE) ||
+						 (t.type == TokenType::RBRACE && pars.back().type == TokenType::LPAR))
+				{
+					error_handler_.report(ErrorType::SYNTAX_ERROR, "'" + t.text + "' on wrong position", t.pos);
+					break;
+				}
+		}
+
+		for (const auto& p : pars)
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "'" + p.text + "' on wrong position", p.pos);
+
+		return pars.size() == 0;
 	}
 }

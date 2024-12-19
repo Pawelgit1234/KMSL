@@ -3,7 +3,8 @@
 namespace kmsl
 {
 	Interpreter::Interpreter() : break_loop_(false), continue_loop_(false),
-		exit_program_(false), logging_enabled_(false), console_running_(false), deepness_(0) {}
+		exit_program_(false), logging_enabled_(false), console_running_(false), deepness_(0),
+		error_handler_(), has_errors_(false) {}
 
 	Interpreter::~Interpreter()
 	{
@@ -12,7 +13,8 @@ namespace kmsl
 
 	void Interpreter::execute()
 	{
-		visit(root_.get());
+		if (!has_errors_)
+			visit(root_.get());
 	}
 
 	void Interpreter::runConsole()
@@ -62,8 +64,13 @@ namespace kmsl
 		}
 	}
 
-	void Interpreter::setCode(const std::string& code)
+	void Interpreter::setCode(const std::string& c)
 	{
+		has_errors_ = false;
+
+		std::string code = c + " "; // for the error_handler, when it cuts the code in lines
+		error_handler_.setCode(code);
+
 		kmsl::Lexer lexer(code);
 		std::vector<kmsl::Token> tokens = lexer.scanTokens();
 
@@ -74,8 +81,16 @@ namespace kmsl
 				std::cout << "Pos: " << t.pos << " Type: " << (int)t.type << " Text: " << t.text << std::endl;
 		}
 
-		kmsl::Parser parser(tokens);
+		kmsl::Parser parser(tokens, error_handler_);
 		root_ = parser.parse();
+
+		if (error_handler_.getErrorsCount() > 0)
+		{
+			error_handler_.showErrors();
+			has_errors_ = true;
+			error_handler_.clearErrors();
+			return;
+		}
 
 		if (logging_enabled_)
 		{
@@ -83,10 +98,18 @@ namespace kmsl
 			std::cout << root_->toString() << std::endl << std::endl;
 		}
 
-		kmsl::SemanticAnalyzer semantic(root_);
+		kmsl::SemanticAnalyzer semantic(root_, error_handler_);
 		if (console_running_)
 			semantic.set_symbols(&symbols_);
 		semantic.analyze();
+
+		if (error_handler_.getErrorsCount() > 0)
+		{
+			error_handler_.showErrors();
+			has_errors_ = true;
+			error_handler_.clearErrors();
+			return;
+		}
 
 		if (logging_enabled_)
 			std::cout << "SEMANTIC ANALYZER: OK" << std::endl << "PROGRAM OUTPUT:" << std::endl;
@@ -339,7 +362,7 @@ namespace kmsl
 		if (it != variables_.end())
 			return it->value;
 
-		throw std::runtime_error("Variable " + node->token.text + " not found.");
+		error_handler_.report(ErrorType::RUNTIME_ERROR, "The variable: '" + node->token.text + "' does not exists", node->token.pos);
 	}
 
 	variant Interpreter::visit(UnarOpNode* node)
@@ -366,7 +389,7 @@ namespace kmsl
 					std::get<float>(value)--;
 			}
 			else
-				throw std::runtime_error("Expected integer/float value for increment/decrement.");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Expected integer/float value for increment/decrement", variableNode->token.pos);
 		}
 		else if (op == TokenType::PRINT)
 		{
@@ -380,7 +403,7 @@ namespace kmsl
 			else if (std::holds_alternative<bool>(value))
 				std::cout << (std::get<bool>(value) ? "TRUE" : "FALSE");
 			else
-				throw std::runtime_error("Unsupported type for printing.");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported type for printing", node->op.pos);
 		}
 		else if (op == TokenType::PLUS || op == TokenType::MINUS || op == TokenType::LOGICAL_NOT || op == TokenType::BIT_NOT)
 		{
@@ -405,10 +428,10 @@ namespace kmsl
 				else if (op == TokenType::LOGICAL_NOT)
 					return !std::get<float>(value);
 				else if (op == TokenType::BIT_NOT)
-					throw std::runtime_error("~ works only with int.");
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "~ works only with integers", node->op.pos);
 			}
 			else
-				throw std::runtime_error("Expected integer/float value for increment/decrement.");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Expected integer/float value for increment/decrement", node->op.pos);
 		}
 		else if (op == TokenType::INPUT)
 		{
@@ -576,9 +599,9 @@ namespace kmsl
 
 			Lexer l(code);
 			std::vector<Token> tokens = l.scanTokens();
-			Parser p(tokens);
+			Parser p(tokens, error_handler_);
 			std::unique_ptr<BlockNode> ast = p.parse();
-			SemanticAnalyzer s(ast);
+			SemanticAnalyzer s(ast, error_handler_);
 			if (console_running_)
 				s.set_symbols(&symbols_);
 			s.analyze();
@@ -638,7 +661,7 @@ namespace kmsl
 				case TokenType::MINUS_ASSIGN: var -= val; break;
 				case TokenType::MULTIPLY_ASSIGN: var *= val; break;
 				case TokenType::DIVIDE_ASSIGN:
-					if (val == 0) throw std::runtime_error("Division by zero.");
+					if (val == 0) error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
 					visit(variableNode) = static_cast<float>(var) / static_cast<float>(val);
 					break;
 				case TokenType::MODULO_ASSIGN: var %= val; break;
@@ -651,7 +674,7 @@ namespace kmsl
 				case TokenType::POWER_ASSIGN: visit(variableNode) = std::pow(static_cast<float>(var), static_cast<float>(val)); break;
 				case TokenType::ROOT_ASSIGN: visit(variableNode) = std::pow(static_cast<float>(var), 1.0f / static_cast<float>(val)); break;
 				case TokenType::LOG_ASSIGN: visit(variableNode) = std::log(static_cast<float>(var)) / std::log(static_cast<float>(val)); break;
-				default: throw std::runtime_error("Unsupported assignment operation.");
+				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assigment operation", node->op.pos);
 				}
 			}
 			else if ((std::holds_alternative<int>(value) && std::holds_alternative<float>(valueNode)) ||
@@ -667,14 +690,14 @@ namespace kmsl
 				case TokenType::MINUS_ASSIGN: var -= val; break;
 				case TokenType::MULTIPLY_ASSIGN: var *= val; break;
 				case TokenType::DIVIDE_ASSIGN:
-					if (val == 0.0f) throw std::runtime_error("Division by zero.");
+					if (val == 0.0f) error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
 					var /= val;
 					break;
 				case TokenType::FLOOR_ASSIGN: var = std::floor(var / val); break;
 				case TokenType::POWER_ASSIGN: var = std::pow(var, val); break;
-				case TokenType::ROOT_ASSIGN: if (val <= 0.0f) throw std::runtime_error("Root degree must be greater than 0."); var = std::pow(var, 1.0f / val); break;
-				case TokenType::LOG_ASSIGN: if (var <= 0.0f || val <= 0.0f) throw std::runtime_error("Logarithm base and argument must be greater than 0."); var = std::log(var) / std::log(val); break;
-				default: throw std::runtime_error("Unsupported assignment operation for float.");
+				case TokenType::ROOT_ASSIGN: if (val <= 0.0f) error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);; var = std::pow(var, 1.0f / val); break;
+				case TokenType::LOG_ASSIGN: if (var <= 0.0f || val <= 0.0f) error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);; var = std::log(var) / std::log(val); break;
+				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assignment operation for float", node->op.pos);
 				}
 
 				visit(variableNode) = var;
@@ -686,7 +709,7 @@ namespace kmsl
 				int times = std::holds_alternative<int>(value) ? std::get<int>(value) : std::get<int>(valueNode);
 
 				if (times < 0)
-					throw std::runtime_error("Cannot multiply string by a negative number.");
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "Cannot multiply string by a negative number", node->op.pos);
 
 				std::string string = var;
 				for (int i = 1; i < times; i++)
@@ -712,7 +735,7 @@ namespace kmsl
 				var += val;
 			}
 			else
-				throw std::runtime_error("Unsupported types for assignment operation.");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported types for assignment operation", node->op.pos);
 
 			break;
 		}
@@ -753,7 +776,7 @@ namespace kmsl
 				case TokenType::MINUS: return left - right;
 				case TokenType::MULTIPLY: return left * right;
 				case TokenType::DIVIDE:
-					if (right == 0) throw std::runtime_error("Division by zero.");
+					if (right == 0) error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
 					return static_cast<float>(left) / static_cast<float>(right);
 				case TokenType::MODULO: return left % right;
 				case TokenType::BIT_AND: return left & right;
@@ -773,7 +796,7 @@ namespace kmsl
 				case TokenType::FLOOR: return static_cast<int>(std::floor(left / right));
 				case TokenType::LOG: return std::log(static_cast<float>(left)) / std::log(static_cast<float>(right));
 				case TokenType::ROOT:
-					if (right <= 0) throw std::runtime_error("Root degree must be greater than 0.");
+					if (right <= 0)error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
 					return std::pow(static_cast<float>(left), 1.0f / static_cast<float>(right));
 				}
 			}
@@ -790,13 +813,13 @@ namespace kmsl
 				case TokenType::MINUS: return left - right;
 				case TokenType::MULTIPLY: return left * right;
 				case TokenType::DIVIDE:
-					if (right == 0.0f) throw std::runtime_error("Division by zero.");
+					if (right == 0.0f) error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
 					return left / right;
 				case TokenType::POWER: return std::pow(left, right);
 				case TokenType::FLOOR: return std::floor(left / right);
 				case TokenType::LOG: return std::log(left) / std::log(right);
 				case TokenType::ROOT:
-					if (right <= 0) throw std::runtime_error("Root degree must be greater than 0.");
+					if (right <= 0) error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
 					return std::pow(left, 1.0f / right);
 				case TokenType::LESS_THAN: return left < right;
 				case TokenType::GREATER_THAN: return left > right;
@@ -804,7 +827,7 @@ namespace kmsl
 				case TokenType::GREATER_THAN_OR_EQUAL: return left >= right;
 				case TokenType::EQUALS: return left == right;
 				case TokenType::NOT_EQUALS: return left != right;
-				default: throw std::runtime_error("Unsupported operation for float.");
+				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported operation for float", node->op.pos);
 				}
 			}
 			else if (std::holds_alternative<bool>(leftValue) && std::holds_alternative<bool>(rightValue))
@@ -822,7 +845,7 @@ namespace kmsl
 				case TokenType::GREATER_THAN: return left > right;
 				case TokenType::LESS_THAN_OR_EQUAL: return left <= right;
 				case TokenType::GREATER_THAN_OR_EQUAL: return left >= right;
-				default: throw std::runtime_error("Unsupported operation for boolean.");
+				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported operation for boolean", node->op.pos);
 				}
 			}
 			else if (((std::holds_alternative<std::string>(leftValue) && std::holds_alternative<int>(rightValue)) ||
@@ -832,7 +855,7 @@ namespace kmsl
 				int times = std::holds_alternative<int>(leftValue) ? std::get<int>(leftValue) : std::get<int>(rightValue);
 
 				if (times < 0)
-					throw std::runtime_error("Cannot multiply string by a negative number.");
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "Cannot multiply string by a negative number", node->op.pos);
 
 				std::string string = var;
 				for (int i = 1; i < times; i++)
@@ -877,12 +900,12 @@ namespace kmsl
 				case TokenType::GREATER_THAN: return left.length() > right.length();
 				case TokenType::LESS_THAN_OR_EQUAL: return left.length() <= right.length();
 				case TokenType::GREATER_THAN_OR_EQUAL: return left.length() >= right.length();
-				default: throw std::runtime_error("Unsupported operation for strings.");
+				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported operation for strings", node->op.pos);
 				}
 			}
 			else
 			{
-				throw std::runtime_error("Unsupported operand types for binary operation.");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported operand types for binary operation", node->op.pos);
 			}
 
 			break;
@@ -943,7 +966,7 @@ namespace kmsl
 				std::ofstream file(filename);
 
 				if (!file.is_open())
-					throw std::runtime_error("File '" + filename + "' cannot be open");
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' cannot be open", node->op.pos);
 
 				file << second;
 				file.close();
@@ -955,7 +978,7 @@ namespace kmsl
 				file.open(filename, std::ios_base::app);
 
 				if (!file.is_open())
-					throw std::runtime_error("File '" + filename + "' cannot be open");
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' cannot be open", node->op.pos);
 
 				file << second;
 				file.close();
@@ -978,9 +1001,8 @@ namespace kmsl
 	{
 		variant conditionResult = visitNode(node->conditionNode.get());
 
-		if (!std::holds_alternative<bool>(conditionResult)) {
-			throw std::runtime_error("The condition in if should be a boolean expression!");
-		}
+		if (!std::holds_alternative<bool>(conditionResult))
+			error_handler_.report(ErrorType::RUNTIME_ERROR, "The condition in if should be a boolean expression", node->token.pos);
 
 		if (std::get<bool>(conditionResult))
 			visit(dynamic_cast<BlockNode*>(node->thenBranchNode.get()));
@@ -1001,7 +1023,7 @@ namespace kmsl
 			variant conditionResult = visitNode(node->conditionNode.get());
 
 			if (!std::holds_alternative<bool>(conditionResult)) 
-				throw std::runtime_error("The condition in for should be a boolean expression!");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "The condition in for should be a boolean expression", node->token.pos);
 			if (!std::get<bool>(conditionResult) || break_loop_ || exit_program_)
 			{
 				break_loop_ = false;
@@ -1021,7 +1043,7 @@ namespace kmsl
 			variant conditionResult = visitNode(node->conditionNode.get());
 
 			if (!std::holds_alternative<bool>(conditionResult))
-				throw std::runtime_error("The condition in for should be a boolean expression!");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "The condition in for should be a boolean expression", node->token.pos);
 
 			if (!std::get<bool>(conditionResult) || break_loop_ || exit_program_)
 			{
@@ -1048,7 +1070,7 @@ namespace kmsl
 			int intValue;
 			ss >> intValue;
 			if (ss.fail())
-				throw std::runtime_error("Failed to convert string to int.");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Failed to convert string to int", node->token.pos);
 			return intValue;
 		}
 		case DataType::FLOAT:
@@ -1056,7 +1078,7 @@ namespace kmsl
 			float floatValue;
 			ss >> floatValue;
 			if (ss.fail())
-				throw std::runtime_error("Failed to convert string to float.");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Failed to convert string to float", node->token.pos);
 			return floatValue;
 		}
 		case DataType::BOOL:
@@ -1066,14 +1088,12 @@ namespace kmsl
 			else if (value == "FALSE")
 				return false;
 			else
-				throw std::runtime_error("Invalid string value for boolean.");
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Failed to convert string to bolean", node->token.pos);
 		}
 		case DataType::STRING:
 		{
 			return value;
 		}
-		default:
-			throw std::runtime_error("Unsupported literal type.");
 		}
 	}
 

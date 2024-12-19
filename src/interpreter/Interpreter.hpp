@@ -22,6 +22,7 @@
 #include "../semantic/SymbolTable.hpp"
 #include "../io/IoController.hpp"
 #include "FileReader.hpp"
+#include "../error/ErrorHandler.hpp"
 
 namespace kmsl
 {
@@ -44,7 +45,7 @@ namespace kmsl
 		void runConsole();
 
 		void setLoggingEnabled(bool logging_enabled) { logging_enabled_ = logging_enabled; }
-		void setCode(const std::string& code);
+		void setCode(const std::string& c);
 
 	private:
 		variant visitNode(AstNode* node);
@@ -60,6 +61,7 @@ namespace kmsl
 		variant visit(MouseNode* node);
 		variant visit(CommandNode* node);
 
+		ErrorHandler error_handler_;
 		std::vector<Variable> variables_;
 		std::unique_ptr<BlockNode> root_;
 		std::vector<Symbol> symbols_; // for semantic-analysis-console
@@ -69,6 +71,7 @@ namespace kmsl
 		bool continue_loop_;
 		bool exit_program_;
 		bool is_printable_; // for console, for example: '> a' or '> 4 * 4' # it will print the answer without "print"
+		bool has_errors_;
 
 		/* FLAGS */
 		bool logging_enabled_;

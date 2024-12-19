@@ -5,13 +5,14 @@
 
 #include "../AST/ast.hpp"
 #include "SymbolTable.hpp"
+#include "../error/ErrorHandler.hpp"
 
 namespace kmsl
 {
 	class SemanticAnalyzer
 	{
 	public:
-		SemanticAnalyzer(std::unique_ptr<BlockNode>& root);
+		SemanticAnalyzer(std::unique_ptr<BlockNode>& root, ErrorHandler& error_handler);
 
 		void analyze();
 
@@ -32,6 +33,8 @@ namespace kmsl
 
 		DataType determineType(AstNode* node);
 		DataType determineBinaryOpType(BinaryOpNode* node);
+
+		ErrorHandler& error_handler_;
 
 		SymbolTable symbol_table_;
 		std::unique_ptr<BlockNode>& root_;

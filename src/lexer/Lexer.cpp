@@ -12,7 +12,7 @@ namespace kmsl
             if (ch == '\n')
                 modified_code += ' ';
         }
-        code_ = modified_code + '\n';
+        code_ = modified_code;
     }
 
     Lexer::~Lexer()
@@ -25,6 +25,7 @@ namespace kmsl
     {
         while (pos_ < code_.length())
             scanToken();
+        tokens_.push_back(Token(TokenType::LINE_END, "\n", pos_ + 1));
 
         return tokens_;
     }
@@ -45,7 +46,7 @@ namespace kmsl
                 pos_ += matched_str.length();
                 Token token(token_type.second, matched_str, pos_);
 
-                
+
                 if (token.type != TokenType::SPACE && token.type != TokenType::COMMENT)
                 {
                     if (token.type == TokenType::STRING)

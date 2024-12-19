@@ -9,13 +9,14 @@
 #include "../token/Token.hpp"
 #include "../token/TokenType.hpp"
 #include "../AST/ast.hpp"
+#include "../error/ErrorHandler.hpp"
 
 namespace kmsl
 {
 	class Parser
 	{
 	public:
-		Parser(std::vector<Token> tokens);
+		Parser(std::vector<Token> tokens, ErrorHandler& error_handler);
 		~Parser();
 
 		std::unique_ptr<BlockNode> parse();
@@ -38,9 +39,15 @@ namespace kmsl
 		std::unique_ptr<WhileNode> parseWhile();
 
 		// formula
-		std::unique_ptr<AstNode> parseTerm();
 		std::unique_ptr<AstNode> parseFactor();
+		std::unique_ptr<AstNode> parseTerm();
 		std::unique_ptr<AstNode> parseExpression();
+
+		// extra
+		bool checkAllPars();
+
+		// fields
+		ErrorHandler& error_handler_;
 
 		std::vector<Token> tokens_;
 		Token current_token_;

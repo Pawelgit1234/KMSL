@@ -39,6 +39,9 @@
     <ClCompile Include="src\interpreter\FileReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\error\ErrorHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lexer\Lexer.hpp">
@@ -105,6 +108,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\interpreter\FileReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\error\ErrorHandler.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

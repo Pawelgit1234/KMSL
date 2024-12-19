@@ -62,6 +62,5 @@ int main(int argc, char* argv[])
 		interpreter.setLoggingEnabled(logging_enabled);
 		interpreter.runConsole();
 	}
-
 	return 0;
 }

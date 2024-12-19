@@ -10,8 +10,8 @@ namespace kmsl
     class IfNode : public AstNode
     {
     public:
-        IfNode(std::unique_ptr<AstNode> condition, std::unique_ptr<AstNode> thenBranch, std::unique_ptr<AstNode> elseBranch)
-            : conditionNode(std::move(condition)), thenBranchNode(std::move(thenBranch)), elseBranchNode(std::move(elseBranch)) {}
+        IfNode(std::unique_ptr<AstNode> condition, std::unique_ptr<AstNode> thenBranch, std::unique_ptr<AstNode> elseBranch, Token t)
+            : conditionNode(std::move(condition)), thenBranchNode(std::move(thenBranch)), elseBranchNode(std::move(elseBranch)), token(t) {}
 
         std::string toString() const override
         {
@@ -21,5 +21,6 @@ namespace kmsl
         std::unique_ptr<AstNode> conditionNode;
         std::unique_ptr<AstNode> thenBranchNode;
         std::unique_ptr<AstNode> elseBranchNode;
+        Token token; // for error handling
     };
 }

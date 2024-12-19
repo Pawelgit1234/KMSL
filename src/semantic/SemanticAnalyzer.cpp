@@ -2,8 +2,8 @@
 
 namespace kmsl
 {
-	SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<BlockNode>& root) : symbol_table_(), root_(root),
-		inside_loop_(false), in_console_(false), symbols_(nullptr), deepness_(0) {}
+	SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<BlockNode>& root, ErrorHandler& error_handler) : symbol_table_(), root_(root),
+		inside_loop_(false), in_console_(false), symbols_(nullptr), deepness_(0), error_handler_(error_handler) {}
 
 	void SemanticAnalyzer::analyze()
 	{
@@ -203,12 +203,12 @@ namespace kmsl
 				if (it != symbols_->end())
 					it->dataType = type;
 				else
-					throw std::runtime_error("The variable: " + variableNode->token.text + " does not exists.");
+					error_handler_.report(ErrorType::SEMANTIC_ERROR, "The variable: '" + variableNode->token.text + "' does not exists", variableNode->token.pos);
 			}
 			else
 			{
 				if (!symbol_table_.getSymbol(variableNode->token.text))
-					throw std::runtime_error("The variable: " + variableNode->token.text + " does not exists.");
+					error_handler_.report(ErrorType::SEMANTIC_ERROR, "The variable: '" + variableNode->token.text + "' does not exists", variableNode->token.pos);
 				else
 				{
 					Symbol* s = symbol_table_.getSymbol(variableNode->token.text);

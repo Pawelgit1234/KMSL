@@ -10,8 +10,8 @@ namespace kmsl
     class WhileNode : public AstNode
     {
     public:
-        WhileNode(std::unique_ptr<AstNode> condition, std::unique_ptr<AstNode> body)
-            : conditionNode(std::move(condition)), bodyNode(std::move(body)) {}
+        WhileNode(std::unique_ptr<AstNode> condition, std::unique_ptr<AstNode> body, Token t)
+            : conditionNode(std::move(condition)), bodyNode(std::move(body)), token(t) {}
 
         std::string toString() const override
         {
@@ -20,5 +20,6 @@ namespace kmsl
 
         std::unique_ptr<AstNode> conditionNode;
         std::unique_ptr<AstNode> bodyNode;
+        Token token; // for error handling
     };
 }

@@ -12,6 +12,7 @@ namespace kmsl
 			: type(t), text(txt), pos(p) {}
 
 		Token() : type(TokenType::INVALID), text(""), pos(0) {}
+		Token(long long p) : type(TokenType::INVALID), text(""), pos(p) {} // Syntax error
 
 		TokenType type;
 		std::string text;

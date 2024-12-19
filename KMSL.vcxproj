@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\error\ErrorHandler.cpp" />
     <ClCompile Include="src\io\IoController.cpp" />
     <ClCompile Include="src\semantic\SemanticAnalyzer.cpp" />
     <ClCompile Include="src\interpreter\Interpreter.cpp" />
@@ -169,6 +170,7 @@
     <ClCompile Include="src\interpreter\FileReader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\error\ErrorHandler.hpp" />
     <ClInclude Include="src\AST\CommandNode.hpp" />
     <ClInclude Include="src\io\IoController.hpp" />
     <ClInclude Include="src\AST\KeyNode.hpp" />
