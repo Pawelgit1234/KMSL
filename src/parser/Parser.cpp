@@ -382,7 +382,17 @@ namespace kmsl
 		removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
 		std::unique_ptr<AstNode> conditionNode = parseExpression();
 		require({ TokenType::RPAR });
-		require({ TokenType::LBRACE });
+		
+		if (require({ TokenType::LBRACE }).type == TokenType::INVALID)
+		{
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "'{}' were forgotten", current_token_.pos - 1);
+
+			return std::make_unique<WhileNode>(
+				std::move(std::unique_ptr<AstNode>()),
+				std::move(std::unique_ptr<AstNode>()),
+				current_token_
+			);
+		}
 
 		std::unique_ptr<BlockNode> bodyNode = std::make_unique<BlockNode>();
 
