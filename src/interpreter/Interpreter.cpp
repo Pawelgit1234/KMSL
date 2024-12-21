@@ -69,7 +69,7 @@ namespace kmsl
 		has_errors_ = false;
 
 		std::string code = c + " "; // for the error_handler, when it cuts the code in lines
-		error_handler_.setCode(code);
+		error_handler_.setCode(FileReader::replaceEscapedNewlines(code));
 
 		kmsl::Lexer lexer(code);
 		std::vector<kmsl::Token> tokens = lexer.scanTokens();

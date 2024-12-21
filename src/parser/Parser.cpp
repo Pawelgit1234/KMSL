@@ -50,7 +50,7 @@ namespace kmsl
 	{
 		const Token token = match(types);
 		if (token.type == TokenType::INVALID)
-			error_handler_.report(ErrorType::SYNTAX_ERROR, "Token on wrong postiton", token.pos);
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "Token on wrong postiton", token.pos - 1);
 
 		return token;
 	}
@@ -65,7 +65,7 @@ namespace kmsl
 		
 		if (stop_index == tokens_.size())
 		{
-			error_handler_.report(ErrorType::SYNTAX_ERROR, "Token on wrong postiton", current_token_.pos);
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "Token on wrong postiton", current_token_.pos - 1);
 			return;
 		}
 
@@ -262,12 +262,16 @@ namespace kmsl
 		require({ TokenType::RPAR });
 
 		if (require({ TokenType::LBRACE }).type == TokenType::INVALID)
+		{
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "'{}' were forgotten", current_token_.pos - 1);
+
 			return std::make_unique<IfNode>(
 				std::move(std::unique_ptr<AstNode>()),
 				std::move(std::unique_ptr<AstNode>()),
 				std::move(std::unique_ptr<AstNode>()),
-				Token()
+				current_token_
 			);
+		}
 
 		std::unique_ptr<BlockNode> thenNode = std::make_unique<BlockNode>();
 		while (match({ TokenType::RBRACE }).type == TokenType::INVALID)
@@ -281,19 +285,14 @@ namespace kmsl
 
 		std::unique_ptr<BlockNode> elseNode = std::make_unique<BlockNode>();
 		
-		auto parseElseBlock = [&](std::unique_ptr<BlockNode>& elseNode)
+		auto parseElseBlock = [&]()
 		{
 			removeTokensUntil({ TokenType::LINE_END }, { TokenType::LBRACE });
 
 			if (require({ TokenType::LBRACE }).type == TokenType::INVALID)
 			{
-				error_handler_.report()
-				return std::make_unique<IfNode>(
-					std::move(std::unique_ptr<AstNode>()),
-					std::move(std::unique_ptr<AstNode>()),
-					std::move(std::unique_ptr<AstNode>()),
-					current_token_
-				);
+				error_handler_.report(ErrorType::SYNTAX_ERROR, "'{}' were forgotten", current_token_.pos - 1);
+				return;
 			}
 
 			while (match({ TokenType::RBRACE }).type == TokenType::INVALID)
@@ -307,12 +306,12 @@ namespace kmsl
 		};
 
 		if (match({ TokenType::ELSE }).type != TokenType::INVALID)
-			parseElseBlock(elseNode);
+			parseElseBlock();
 		else
 		{
 			pos_++;
 			if (match({ TokenType::ELSE }).type != TokenType::INVALID)
-				parseElseBlock(elseNode);
+				parseElseBlock();
 			else
 				pos_--;
 		}
@@ -341,7 +340,19 @@ namespace kmsl
 		std::unique_ptr<AstNode> incrementNode = parseVariable();
 
 		require({ TokenType::RPAR });
-		require({ TokenType::LBRACE });
+
+		if (require({ TokenType::LBRACE }).type == TokenType::INVALID)
+		{
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "'{}' were forgotten", current_token_.pos - 1);
+	
+			return std::make_unique<ForNode>(
+				std::move(std::unique_ptr<AstNode>()),
+				std::move(std::unique_ptr<AstNode>()),
+				std::move(std::unique_ptr<AstNode>()),
+				std::move(std::unique_ptr<AstNode>()),
+				current_token_
+			);
+		}
 
 		std::unique_ptr<BlockNode> bodyNode = std::make_unique<BlockNode>();
 
@@ -469,7 +480,7 @@ namespace kmsl
 		}
 
 		for (const auto& p : pars)
-			error_handler_.report(ErrorType::SYNTAX_ERROR, "'" + p.text + "' on wrong position", p.pos);
+			error_handler_.report(ErrorType::SYNTAX_ERROR, "'" + p.text + "' is not closed", p.pos);
 
 		return pars.size() == 0;
 	}
