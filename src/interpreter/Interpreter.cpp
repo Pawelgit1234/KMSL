@@ -15,6 +15,14 @@ namespace kmsl
 	{
 		if (!has_errors_)
 			visit(root_.get());
+
+		if (error_handler_.getErrorsCount() > 0)
+		{
+			error_handler_.showErrors();
+			has_errors_ = true;
+			error_handler_.clearErrors();
+			return;
+		}
 	}
 
 	void Interpreter::runConsole()
@@ -428,7 +436,7 @@ namespace kmsl
 				else if (op == TokenType::LOGICAL_NOT)
 					return !std::get<float>(value);
 				else if (op == TokenType::BIT_NOT)
-					error_handler_.report(ErrorType::RUNTIME_ERROR, "~ works only with integers", node->op.pos);
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "'~' works only with integers", node->op.pos);
 			}
 			else
 				error_handler_.report(ErrorType::RUNTIME_ERROR, "Expected integer/float value for increment/decrement", node->op.pos);
@@ -661,19 +669,55 @@ namespace kmsl
 				case TokenType::MINUS_ASSIGN: var -= val; break;
 				case TokenType::MULTIPLY_ASSIGN: var *= val; break;
 				case TokenType::DIVIDE_ASSIGN:
-					if (val == 0) error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
-					visit(variableNode) = static_cast<float>(var) / static_cast<float>(val);
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
+						var = 0;
+					}
+					else
+						var /= static_cast<float>(val);
 					break;
-				case TokenType::MODULO_ASSIGN: var %= val; break;
+				case TokenType::MODULO_ASSIGN: 
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Modulo by zero", node->op.pos);
+						var = 0;
+					}
+					else
+						var %= val;
+					break;
 				case TokenType::BIT_AND_ASSIGN: var &= val; break;
 				case TokenType::BIT_OR_ASSIGN: var |= val; break;
 				case TokenType::BIT_XOR_ASSIGN: var ^= val; break;
 				case TokenType::BIT_LEFT_SHIFT_ASSIGN: var <<= val; break;
 				case TokenType::BIT_RIGHT_SHIFT_ASSIGN: var >>= val; break;
-				case TokenType::FLOOR_ASSIGN: var = std::floor(var / val); break;
-				case TokenType::POWER_ASSIGN: visit(variableNode) = std::pow(static_cast<float>(var), static_cast<float>(val)); break;
-				case TokenType::ROOT_ASSIGN: visit(variableNode) = std::pow(static_cast<float>(var), 1.0f / static_cast<float>(val)); break;
-				case TokenType::LOG_ASSIGN: visit(variableNode) = std::log(static_cast<float>(var)) / std::log(static_cast<float>(val)); break;
+				case TokenType::FLOOR_ASSIGN: 
+					if (val == 0) 
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero in floor operation", node->op.pos);
+						var = 0;
+					}
+					else
+						var = static_cast<int>(std::floor(static_cast<float>(var) / val));
+				case TokenType::POWER_ASSIGN: var = std::pow(static_cast<float>(var), static_cast<float>(val)); break;
+				case TokenType::ROOT_ASSIGN:
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
+						var = 0;
+					}
+					else
+						var = std::pow(static_cast<float>(var), 1.0f / static_cast<float>(val));
+					break;
+				case TokenType::LOG_ASSIGN:
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);
+						var = 0;
+					}
+					else
+						var = std::log(static_cast<float>(var)) / std::log(static_cast<float>(val));
+					break;
 				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assigment operation", node->op.pos);
 				}
 			}
@@ -690,17 +734,43 @@ namespace kmsl
 				case TokenType::MINUS_ASSIGN: var -= val; break;
 				case TokenType::MULTIPLY_ASSIGN: var *= val; break;
 				case TokenType::DIVIDE_ASSIGN:
-					if (val == 0.0f) error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
-					var /= val;
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
+						var = 0;
+					}
+					else
+						var /= static_cast<float>(val);
 					break;
-				case TokenType::FLOOR_ASSIGN: var = std::floor(var / val); break;
+				case TokenType::FLOOR_ASSIGN:
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero in floor operation", node->op.pos);
+						var = 0;
+					}
+					else
+						var = static_cast<int>(std::floor(static_cast<float>(var) / val));
 				case TokenType::POWER_ASSIGN: var = std::pow(var, val); break;
-				case TokenType::ROOT_ASSIGN: if (val <= 0.0f) error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);; var = std::pow(var, 1.0f / val); break;
-				case TokenType::LOG_ASSIGN: if (var <= 0.0f || val <= 0.0f) error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);; var = std::log(var) / std::log(val); break;
+				case TokenType::ROOT_ASSIGN:
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
+						var = 0;
+					}
+					else
+						var = std::pow(static_cast<float>(var), 1.0f / static_cast<float>(val));
+					break;
+				case TokenType::LOG_ASSIGN: 
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);
+						var = 0;
+					}
+					else
+						var = std::log(static_cast<float>(var)) / std::log(static_cast<float>(val));
+					break;
 				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assignment operation for float", node->op.pos);
 				}
-
-				visit(variableNode) = var;
 			}
 			else if (((std::holds_alternative<std::string>(value) && std::holds_alternative<int>(valueNode)) ||
 				(std::holds_alternative<int>(value) && std::holds_alternative<std::string>(valueNode))) && node->op.type == TokenType::MULTIPLY_ASSIGN)
@@ -710,10 +780,12 @@ namespace kmsl
 
 				if (times < 0)
 					error_handler_.report(ErrorType::RUNTIME_ERROR, "Cannot multiply string by a negative number", node->op.pos);
-
-				std::string string = var;
-				for (int i = 1; i < times; i++)
-					var += string;
+				else
+				{
+					std::string string = var;
+					for (int i = 1; i < times; i++)
+						var += string;
+				}
 			}
 			else if ((std::holds_alternative<std::string>(value) && std::holds_alternative<std::string>(valueNode)) ||
 					(std::holds_alternative<std::string>(value) && std::holds_alternative<int>(valueNode)) ||
@@ -776,9 +848,19 @@ namespace kmsl
 				case TokenType::MINUS: return left - right;
 				case TokenType::MULTIPLY: return left * right;
 				case TokenType::DIVIDE:
-					if (right == 0) error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
+					if (right == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
+						return 0;
+					}
 					return static_cast<float>(left) / static_cast<float>(right);
 				case TokenType::MODULO: return left % right;
+					if (right == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Modulo by zero", node->op.pos);
+						return 0;
+					}
+					return left % right;
 				case TokenType::BIT_AND: return left & right;
 				case TokenType::BIT_OR: return left | right;
 				case TokenType::BIT_XOR: return left ^ right;
@@ -793,10 +875,26 @@ namespace kmsl
 				case TokenType::LOGICAL_AND: return left && right;
 				case TokenType::LOGICAL_OR: return left || right;
 				case TokenType::POWER: return std::pow(static_cast<float>(left), static_cast<float>(right));
-				case TokenType::FLOOR: return static_cast<int>(std::floor(left / right));
-				case TokenType::LOG: return std::log(static_cast<float>(left)) / std::log(static_cast<float>(right));
+				case TokenType::FLOOR:
+					if (right == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero in floor operation", node->op.pos);
+						return 0;
+					}
+					return static_cast<int>(std::floor(left / right));
+				case TokenType::LOG:
+					if (right == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);
+						return 0;
+					}
+					return std::log(static_cast<float>(left)) / std::log(static_cast<float>(right));
 				case TokenType::ROOT:
-					if (right <= 0)error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
+					if (right == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
+						return 0;
+					}
 					return std::pow(static_cast<float>(left), 1.0f / static_cast<float>(right));
 				}
 			}
@@ -813,13 +911,33 @@ namespace kmsl
 				case TokenType::MINUS: return left - right;
 				case TokenType::MULTIPLY: return left * right;
 				case TokenType::DIVIDE:
-					if (right == 0.0f) error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
+					if (right == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
+						return 0;
+					}
 					return left / right;
 				case TokenType::POWER: return std::pow(left, right);
-				case TokenType::FLOOR: return std::floor(left / right);
-				case TokenType::LOG: return std::log(left) / std::log(right);
+				case TokenType::FLOOR:
+					if (right == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero in floor operation", node->op.pos);
+						return 0;
+					}
+					return static_cast<int>(std::floor(left / right));
+				case TokenType::LOG: 
+					if (right == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);
+						return 0;
+					}
+					return std::log(left) / std::log(right);
 				case TokenType::ROOT:
-					if (right <= 0) error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
+					if (right == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
+						return 0;
+					}
 					return std::pow(left, 1.0f / right);
 				case TokenType::LESS_THAN: return left < right;
 				case TokenType::GREATER_THAN: return left > right;
@@ -924,6 +1042,8 @@ namespace kmsl
 					time = static_cast<float>(std::get<int>(right));
 				else if (std::holds_alternative<float>(right))
 					time = std::get<float>(right);
+				else
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "", node->op.pos); // доделать
 			}
 
 			if (node->op.type == TokenType::TYPE)
@@ -1127,7 +1247,7 @@ namespace kmsl
 		};
 
 		float time = 0.f;
-		switch (node->token_type)
+		switch (node->token.type)
 		{
 		case TokenType::PRESS:
 		{
@@ -1181,7 +1301,7 @@ namespace kmsl
 		float time = 0;
 		setValues(x, y, time);
 
-		if (node->token_type == TokenType::MOVE)
+		if (node->token.type == TokenType::MOVE)
 			IoController::moveTo(x, y, time);
 		else
 			IoController::moveBy(x, y, time);
@@ -1191,11 +1311,11 @@ namespace kmsl
 
 	variant Interpreter::visit(CommandNode* node)
 	{
-		if (node->type == TokenType::BREAK)
+		if (node->type.type == TokenType::BREAK)
 			break_loop_ = true;
-		else if (node->type == TokenType::CONTINUE)
+		else if (node->type.type == TokenType::CONTINUE)
 			continue_loop_ = true;
-		else if (node->type == TokenType::EXIT)
+		else if (node->type.type == TokenType::EXIT)
 			exit_program_ = true;
 		return variant();
 	}

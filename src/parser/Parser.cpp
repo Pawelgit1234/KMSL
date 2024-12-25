@@ -110,7 +110,7 @@ namespace kmsl
 		}
 		else if (match({ TokenType::BREAK, TokenType::CONTINUE, TokenType::EXIT }).type != TokenType::INVALID)
 		{
-			std::unique_ptr<CommandNode> commandNode(std::make_unique<CommandNode>(current_token_.type));
+			std::unique_ptr<CommandNode> commandNode(std::make_unique<CommandNode>(current_token_));
 			return commandNode;
 		}
 		else if (match({ TokenType::LINE_END }).type != TokenType::INVALID)
@@ -130,8 +130,8 @@ namespace kmsl
 		}
 		else if (match({ TokenType::HOLD, TokenType::RELEASE, TokenType::PRESS }).type != TokenType::INVALID)
 		{
-			TokenType type = current_token_.type;
-			std::unique_ptr<KeyNode> keyNode(std::make_unique<KeyNode>(type, parseArguments()));
+			Token token = current_token_;
+			std::unique_ptr<KeyNode> keyNode(std::make_unique<KeyNode>(token, parseArguments()));
 			return keyNode;
 		}
 		else if (match({ TokenType::WAIT, TokenType::OS, TokenType::DO,TokenType::CREATEFILE, TokenType::REMOVE, TokenType::CREATEDIR }).type != TokenType::INVALID)
@@ -187,7 +187,7 @@ namespace kmsl
 
 	std::unique_ptr<MouseNode> Parser::parseMouse()
 	{
-		TokenType type = current_token_.type;
+		Token token = current_token_;
 		std::unique_ptr<AstNode> x = parseExpression();
 		require({ TokenType::COMMA });
 		std::unique_ptr<AstNode> y = parseExpression();
@@ -197,7 +197,7 @@ namespace kmsl
 			t = parseExpression();
 
 		std::unique_ptr<MouseNode> mouseNode = std::make_unique<MouseNode>(
-			type,
+			token,
 			std::move(x),
 			std::move(y),
 			std::move(t)
@@ -269,7 +269,7 @@ namespace kmsl
 				std::move(std::unique_ptr<AstNode>()),
 				std::move(std::unique_ptr<AstNode>()),
 				std::move(std::unique_ptr<AstNode>()),
-				current_token_
+				posToken
 			);
 		}
 
@@ -320,7 +320,7 @@ namespace kmsl
 			std::move(conditionNode),
 			std::move(thenNode),
 			std::move(elseNode),
-			current_token_
+			posToken
 		);
 		return ifNode;
 	}
@@ -350,7 +350,7 @@ namespace kmsl
 				std::move(std::unique_ptr<AstNode>()),
 				std::move(std::unique_ptr<AstNode>()),
 				std::move(std::unique_ptr<AstNode>()),
-				current_token_
+				posToken
 			);
 		}
 
@@ -390,7 +390,7 @@ namespace kmsl
 			return std::make_unique<WhileNode>(
 				std::move(std::unique_ptr<AstNode>()),
 				std::move(std::unique_ptr<AstNode>()),
-				current_token_
+				posToken
 			);
 		}
 

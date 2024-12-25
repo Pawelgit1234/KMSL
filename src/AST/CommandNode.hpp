@@ -10,13 +10,13 @@ namespace kmsl
     class CommandNode : public AstNode // single token node: break, continue, !!
     {
     public:
-        CommandNode(TokenType t) : type(t) {}
+        CommandNode(Token t) : type(t) {}
 
         std::string toString() const override
         {
-            return "CommandNode()";
+            return "CommandNode(" + type.text + ")";
         }
 
-        TokenType type;
+        Token type;
     };
 }

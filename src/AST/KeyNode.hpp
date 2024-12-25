@@ -12,17 +12,17 @@ namespace kmsl
     class KeyNode : public AstNode
     {
     public:
-        KeyNode(TokenType t, std::vector<std::unique_ptr<AstNode>> buttons)
-            : token_type(t), buttonNodes(std::move(buttons)) {}
+        KeyNode(Token t, std::vector<std::unique_ptr<AstNode>> buttons)
+            : token(t), buttonNodes(std::move(buttons)) {}
 
         std::string toString() const override
         {
             std::ostringstream oss;
-            if (token_type == TokenType::HOLD)
+            if (token.type == TokenType::HOLD)
                 oss << "Hold(";
-            else if (token_type == TokenType::RELEASE)
+            else if (token.type == TokenType::RELEASE)
                 oss << "Release(";
-            else if (token_type == TokenType::PRESS)
+            else if (token.type == TokenType::PRESS)
                 oss << "Press(";
             else
                 oss << "UnknownAction(";
@@ -38,7 +38,7 @@ namespace kmsl
             return oss.str();
         }
 
-        TokenType token_type; // HOLD, RELEASE or PRESS
+        Token token; // HOLD, RELEASE or PRESS
         std::vector<std::unique_ptr<AstNode>> buttonNodes; // t is at the last element
     };
 }

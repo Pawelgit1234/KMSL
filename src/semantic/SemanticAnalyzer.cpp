@@ -75,11 +75,10 @@ namespace kmsl
 					[&](const Symbol& symbol) { return symbol.name == node->token.text; });
 
 				if (it == symbols_->end())
-					throw std::runtime_error("The variable " + node->token.text + " is not existing!");
-
+					error_handler_.report(ErrorType::SEMANTIC_ERROR, "The variable " + node->token.text + " is not existing!", node->token.pos);
 			}
 			else if (!symbol_table_.isDeclared(node->token.text))
-				throw std::runtime_error("The variable " + node->token.text + " is not existing!");
+				error_handler_.report(ErrorType::SEMANTIC_ERROR, "The variable " + node->token.text + " is not existing!", node->token.pos);
 		}
 	}
 
@@ -253,7 +252,8 @@ namespace kmsl
 
 	void SemanticAnalyzer::visit(IfNode* node)
 	{
-		if (determineType(node->conditionNode.get()) != DataType::BOOL) std::runtime_error("The condition in if should be a boolean expression!");
+		if (determineType(node->conditionNode.get()) != DataType::BOOL)
+			error_handler_.report(ErrorType::SEMANTIC_ERROR, "The condition in 'if' should be a boolean expression", node->token.pos + 1);
 		visit(dynamic_cast<BlockNode*>(node->thenBranchNode.get()));
 		if (node->elseBranchNode.get()) visit(dynamic_cast<BlockNode*>(node->elseBranchNode.get()));
 	}
@@ -267,7 +267,8 @@ namespace kmsl
 		visitNode(node->initializerNode.get());
 		deepness_--;
 
-		if (determineType(node->conditionNode.get()) != DataType::BOOL) std::runtime_error("The condition in for should be a boolean expression!");
+		if (determineType(node->conditionNode.get()) != DataType::BOOL)
+			error_handler_.report(ErrorType::SEMANTIC_ERROR, "The condition in 'for' should be a boolean expression", node->token.pos + 2);
 		visitNode(node->incrementNode.get());
 		visit(dynamic_cast<BlockNode*>(node->bodyNode.get()));
 
@@ -279,7 +280,8 @@ namespace kmsl
 		bool wasInsideLoop = inside_loop_;
 		inside_loop_ = true;
 
-		if (determineType(node->conditionNode.get()) != DataType::BOOL) std::runtime_error("The condition in while should be a boolean expression!");
+		if (determineType(node->conditionNode.get()) != DataType::BOOL)
+			error_handler_.report(ErrorType::SEMANTIC_ERROR, "The condition in 'while' should be a boolean expression", node->token.pos + 1);
 		visit(dynamic_cast<BlockNode*>(node->bodyNode.get()));
 
 		inside_loop_ = wasInsideLoop;
@@ -300,10 +302,10 @@ namespace kmsl
 
 	void SemanticAnalyzer::visit(CommandNode* node)
 	{
-		if (node->type == TokenType::BREAK || node->type == TokenType::CONTINUE)
+		if (node->type.type == TokenType::BREAK || node->type.type == TokenType::CONTINUE)
 		{
 			if (!inside_loop_)
-				throw std::runtime_error("Break/Continue statement is not inside a loop!");
+			error_handler_.report(ErrorType::SEMANTIC_ERROR, "'" + node->type.text + "' statement is not inside a loop!", node->type.pos);
 		}
 	}
 
