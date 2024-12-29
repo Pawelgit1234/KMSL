@@ -1043,7 +1043,7 @@ namespace kmsl
 				else if (std::holds_alternative<float>(right))
 					time = std::get<float>(right);
 				else
-					error_handler_.report(ErrorType::RUNTIME_ERROR, "", node->op.pos); // доделать
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "The time parameters type should be int/float", node->op.pos);
 			}
 
 			if (node->op.type == TokenType::TYPE)
@@ -1053,6 +1053,8 @@ namespace kmsl
 					std::string text = std::get<std::string>(left);
 					IoController::type(text, time);
 				}
+				else
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "The type parameter should be string", node->op.pos);
 			}
 			else if (node->op.type == TokenType::SCROLL)
 			{
@@ -1061,6 +1063,8 @@ namespace kmsl
 					int amount = std::get<int>(left);
 					IoController::scroll(amount, time);
 				}
+				else
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "The scroll parameter should be int", node->op.pos);
 			}
 		}
 		case TokenType::WRITEFILE:
@@ -1078,6 +1082,8 @@ namespace kmsl
 				filename = std::get<std::string>(left);
 				second = std::get<std::string>(right);
 			}
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Filename and text parameters should be string", node->op.pos);
 
 			switch (node->op.type)
 			{
@@ -1087,9 +1093,12 @@ namespace kmsl
 
 				if (!file.is_open())
 					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' cannot be open", node->op.pos);
+				else
+				{
+					file << second;
+					file.close();
+				}
 
-				file << second;
-				file.close();
 				break;
 			}
 			case TokenType::APPENDFILE:
@@ -1099,16 +1108,28 @@ namespace kmsl
 
 				if (!file.is_open())
 					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' cannot be open", node->op.pos);
+				else
+				{
+					file << second;
+					file.close();
+				}
 
-				file << second;
-				file.close();
 				break;
 			}
 			case TokenType::COPY:
-				std::filesystem::copy(filename, second);
+				if (!std::filesystem::exists(filename))
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' cannot be found", node->op.pos);
+				else
+					std::filesystem::copy(filename, second);
+
 				break;
 			case TokenType::RENAME:
-				std::filesystem::rename(filename, second);
+				
+				if (!std::filesystem::exists(filename))
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' cannot be found", node->op.pos);
+				else
+					std::filesystem::rename(filename, second);
+				
 				break;
 			}
 		}
