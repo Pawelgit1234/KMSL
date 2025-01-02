@@ -2,14 +2,13 @@
 
 void kmsl::ErrorHandler::showErrors()
 {
-	std::cerr << std::to_string(getErrorsCount()) << " error/-s was found..." << std::endl;
+	std::cerr << std::endl << std::to_string(getErrorsCount()) << " error/-s was found..." << std::endl;
 
 	for (const Error& e : errors_)
 	{
 		std::string code_line = getCodeLineFromCode(e.pos);
 
-		std::cerr << std::endl;
-		std::cerr << '[' << stringifyErrorType(e.type) << "][" << getLineByPosition(e.pos) << "] " << e.message << std::endl;
+		std::cerr << std::endl << '[' << stringifyErrorType(e.type) << "][" << getLineByPosition(e.pos) << "] " << e.message << std::endl;
 		std::cerr << code_line << std::endl;
 
 		for (int i = 1; i < error_pos_; i++)
@@ -17,7 +16,7 @@ void kmsl::ErrorHandler::showErrors()
 
 		std::cerr << '^';
 
-		for (int i = 0; i < code_line.size() - error_pos_; i++)
+		for (int i = 0; i < std::abs(static_cast<long long>(code_line.size()) - error_pos_); i++)
 			std::cerr << '~';
 
 		std::cerr << std::endl;

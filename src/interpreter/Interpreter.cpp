@@ -286,8 +286,10 @@ namespace kmsl
 			{
 			case TokenType::GETX:
 				temp_var_ = x;
+				break;
 			case TokenType::GETY:
 				temp_var_ = y;
+				break;
 			}
 
 			return temp_var_;
@@ -397,7 +399,7 @@ namespace kmsl
 					std::get<float>(value)--;
 			}
 			else
-				error_handler_.report(ErrorType::RUNTIME_ERROR, "Expected integer/float value for increment/decrement", variableNode->token.pos);
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Expected int/float value for increment/decrement", variableNode->token.pos);
 		}
 		else if (op == TokenType::PRINT)
 		{
@@ -423,7 +425,7 @@ namespace kmsl
 				else if (op == TokenType::MINUS)
 					return -std::get<int>(value);
 				else if (op == TokenType::LOGICAL_NOT)
-					return !std::get<int>(value);
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "'!' works only with bool", node->op.pos);
 				else if (op == TokenType::BIT_NOT)
 					return ~std::get<int>(value);
 			}
@@ -434,12 +436,23 @@ namespace kmsl
 				else if (op == TokenType::MINUS)
 					return -std::get<float>(value);
 				else if (op == TokenType::LOGICAL_NOT)
-					return !std::get<float>(value);
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "'!' works only with bool", node->op.pos);
 				else if (op == TokenType::BIT_NOT)
-					error_handler_.report(ErrorType::RUNTIME_ERROR, "'~' works only with integers", node->op.pos);
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "'~' works only with int", node->op.pos);
+			}
+			else if (std::holds_alternative<bool>(value))
+			{
+				if (op == TokenType::PLUS)
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "'+' works only with int/float", node->op.pos);
+				else if (op == TokenType::MINUS)
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "'-' works only with int/float", node->op.pos);
+				else if (op == TokenType::LOGICAL_NOT)
+					return !std::get<bool>(value);
+				else if (op == TokenType::BIT_NOT)
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "'~' works only with int", node->op.pos);
 			}
 			else
-				error_handler_.report(ErrorType::RUNTIME_ERROR, "Expected integer/float value for increment/decrement", node->op.pos);
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "String cannot operate with +/-/!/~", node->op.pos);
 		}
 		else if (op == TokenType::INPUT)
 		{
@@ -669,14 +682,21 @@ namespace kmsl
 				case TokenType::MINUS_ASSIGN: var -= val; break;
 				case TokenType::MULTIPLY_ASSIGN: var *= val; break;
 				case TokenType::DIVIDE_ASSIGN:
+				{
 					if (val == 0)
 					{
 						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
 						var = 0;
 					}
 					else
-						var /= static_cast<float>(val);
+					{
+						// a /= n -----> a = a / n
+						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::DIVIDE, "/", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+						visit(fullNewNode.get());
+					}
 					break;
+				}
 				case TokenType::MODULO_ASSIGN: 
 					if (val == 0)
 					{
@@ -692,14 +712,125 @@ namespace kmsl
 				case TokenType::BIT_LEFT_SHIFT_ASSIGN: var <<= val; break;
 				case TokenType::BIT_RIGHT_SHIFT_ASSIGN: var >>= val; break;
 				case TokenType::FLOOR_ASSIGN: 
-					if (val == 0) 
+				{
+					if (val == 0)
 					{
 						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero in floor operation", node->op.pos);
 						var = 0;
 					}
 					else
-						var = static_cast<int>(std::floor(static_cast<float>(var) / val));
-				case TokenType::POWER_ASSIGN: var = std::pow(static_cast<float>(var), static_cast<float>(val)); break;
+						var /= val;
+					break;
+				case TokenType::POWER_ASSIGN:
+					if (val >= 0)
+						var = std::pow(var, val);
+					else
+					{
+						// a **= n -----> a = a ** n
+						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::POWER, "**", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+						visit(fullNewNode.get());
+					}
+					break;
+				}
+				case TokenType::ROOT_ASSIGN:
+				{
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
+						var = 0;
+					}
+					else
+					{
+						// a %%= n -----> a = a %% n
+						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::ROOT, "%%", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+						visit(fullNewNode.get());
+					}
+					break;
+				}
+				case TokenType::LOG_ASSIGN:
+				{
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);
+						var = 0;
+					}
+					else
+					{
+						// a ^^= n -----> a = a ^^ n
+						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::LOG, "^^", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+						visit(fullNewNode.get());
+					}
+					break;
+				}
+				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assigment operation", node->op.pos);
+				}
+			}
+			else if (std::holds_alternative<int>(value) && std::holds_alternative<float>(valueNode))
+			{
+				int& var = std::get<int>(value);
+				float val = std::get<float>(valueNode);
+
+				switch (node->op.type)
+				{
+				case TokenType::PLUS_ASSIGN:
+				{
+					// a += n -----> a = a + n
+					std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::PLUS, "+", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+					std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+					visit(fullNewNode.get());
+					break;
+				}
+				case TokenType::MINUS_ASSIGN:
+				{
+					// a -= n -----> a = a - n
+					std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::MINUS, "-", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+					std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+					visit(fullNewNode.get());
+					break;
+				}
+				case TokenType::MULTIPLY_ASSIGN:
+				{
+					// a *= n -----> a = a * n
+					std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::MULTIPLY , "*", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+					std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+					visit(fullNewNode.get());
+					break;
+				}
+				case TokenType::DIVIDE_ASSIGN:
+				{
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
+						var = 0;
+					}
+					else
+					{
+						// a /= n -----> a = a / n
+						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::DIVIDE, "/", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+						visit(fullNewNode.get());
+						break;
+					}
+				}
+				case TokenType::FLOOR_ASSIGN:
+					if (val == 0)
+					{
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero in floor operation", node->op.pos);
+						var = 0;
+					}
+					else
+						var = static_cast<int>(std::floor(var / val));
+				case TokenType::POWER_ASSIGN:
+				{
+					// a **= n -----> a = a * n
+					std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::MULTIPLY, "*", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+					std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+					visit(fullNewNode.get());
+					break;
+				}
 				case TokenType::ROOT_ASSIGN:
 					if (val == 0)
 					{
@@ -707,7 +838,13 @@ namespace kmsl
 						var = 0;
 					}
 					else
-						var = std::pow(static_cast<float>(var), 1.0f / static_cast<float>(val));
+					{
+						// a += n -----> a = a + n
+						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::ROOT, "%%", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+						visit(fullNewNode.get());
+						break;
+					}
 					break;
 				case TokenType::LOG_ASSIGN:
 					if (val == 0)
@@ -716,16 +853,21 @@ namespace kmsl
 						var = 0;
 					}
 					else
-						var = std::log(static_cast<float>(var)) / std::log(static_cast<float>(val));
+					{
+						// a ^^= n -----> a = a ^^ n
+						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::LOG, "^^", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
+						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
+						visit(fullNewNode.get());
+						break;
+					}
 					break;
-				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assigment operation", node->op.pos);
+				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assignment operation for float", node->op.pos);
 				}
 			}
-			else if ((std::holds_alternative<int>(value) && std::holds_alternative<float>(valueNode)) ||
-				(std::holds_alternative<float>(value) && std::holds_alternative<int>(valueNode)) ||
-				(std::holds_alternative<float>(value) && std::holds_alternative<float>(valueNode)))
+			else if ((std::holds_alternative<float>(value) && std::holds_alternative<int>(valueNode)) ||
+					 (std::holds_alternative<float>(value) && std::holds_alternative<float>(valueNode)))
 			{
-				float var = std::holds_alternative<int>(value) ? static_cast<float>(std::get<int>(value)) : std::get<float>(value);
+				float& var = std::holds_alternative<int>(value) ? *reinterpret_cast<float*>(&std::get<int>(value)) : std::get<float>(value);
 				float val = std::holds_alternative<int>(valueNode) ? static_cast<float>(std::get<int>(valueNode)) : std::get<float>(valueNode);
 
 				switch (node->op.type)
@@ -740,7 +882,7 @@ namespace kmsl
 						var = 0;
 					}
 					else
-						var /= static_cast<float>(val);
+						var /= val;
 					break;
 				case TokenType::FLOOR_ASSIGN:
 					if (val == 0)
@@ -749,7 +891,7 @@ namespace kmsl
 						var = 0;
 					}
 					else
-						var = static_cast<int>(std::floor(static_cast<float>(var) / val));
+						var = static_cast<int>(std::floor(var / val));
 				case TokenType::POWER_ASSIGN: var = std::pow(var, val); break;
 				case TokenType::ROOT_ASSIGN:
 					if (val == 0)
@@ -758,7 +900,7 @@ namespace kmsl
 						var = 0;
 					}
 					else
-						var = std::pow(static_cast<float>(var), 1.0f / static_cast<float>(val));
+						var = std::pow(var, 1.0f / val);
 					break;
 				case TokenType::LOG_ASSIGN: 
 					if (val == 0)
@@ -767,7 +909,7 @@ namespace kmsl
 						var = 0;
 					}
 					else
-						var = std::log(static_cast<float>(var)) / std::log(static_cast<float>(val));
+						var = std::log(var) / std::log(val);
 					break;
 				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assignment operation for float", node->op.pos);
 				}
@@ -782,9 +924,14 @@ namespace kmsl
 					error_handler_.report(ErrorType::RUNTIME_ERROR, "Cannot multiply string by a negative number", node->op.pos);
 				else
 				{
-					std::string string = var;
-					for (int i = 1; i < times; i++)
-						var += string;
+					if (times != 0)
+					{
+						std::string string = var;
+						for (int i = 1; i < times; i++)
+							var += string;
+					}
+					else
+						var = "";
 				}
 			}
 			else if ((std::holds_alternative<std::string>(value) && std::holds_alternative<std::string>(valueNode)) ||
@@ -1243,15 +1390,18 @@ namespace kmsl
 		auto processButtons = [&](float& time) -> std::vector<std::string> {
 			std::vector<std::string> buttons;
 
-			if (!node->buttonNodes.empty()) {
+			if (!node->buttonNodes.empty())
+			{
 				auto lastNode = node->buttonNodes.back().get();
 				variant lastValue = visitNode(lastNode);
 
-				if (std::holds_alternative<int>(lastValue)) {
+				if (std::holds_alternative<int>(lastValue))
+				{
 					time = static_cast<float>(std::get<int>(lastValue));
 					node->buttonNodes.pop_back();
 				}
-				else if (std::holds_alternative<float>(lastValue)) {
+				else if (std::holds_alternative<float>(lastValue))
+				{
 					time = std::get<float>(lastValue);
 					node->buttonNodes.pop_back();
 				}
@@ -1259,9 +1409,10 @@ namespace kmsl
 
 			for (const auto& btnNode : node->buttonNodes) {
 				variant button = visitNode(btnNode.get());
-				if (std::holds_alternative<std::string>(button)) {
+				if (std::holds_alternative<std::string>(button))
 					buttons.emplace_back(std::get<std::string>(button));
-				}
+				else
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "All buttons must be string", node->token.pos);
 			}
 
 			return buttons;
@@ -1303,9 +1454,14 @@ namespace kmsl
 
 			if (std::holds_alternative<int>(xValue))
 				x = std::get<int>(xValue);
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "The x pos of the curser should be int", node->token.pos);
 
 			if (std::holds_alternative<int>(yValue))
 				y = std::get<int>(yValue);
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "The y pos of the curser should be int", node->token.pos);
+
 
 			if (node->tNode)
 			{
@@ -1314,6 +1470,8 @@ namespace kmsl
 					time = static_cast<float>(std::get<int>(tValue));
 				else if (std::holds_alternative<float>(tValue))
 					time = std::get<float>(tValue);
+				else
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "The cursor movement time should be int/float", node->token.pos);
 			}
 		};
 

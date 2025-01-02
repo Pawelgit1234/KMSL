@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 #include "../token/Token.hpp"
 

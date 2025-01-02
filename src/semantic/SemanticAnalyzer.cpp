@@ -75,10 +75,10 @@ namespace kmsl
 					[&](const Symbol& symbol) { return symbol.name == node->token.text; });
 
 				if (it == symbols_->end())
-					error_handler_.report(ErrorType::SEMANTIC_ERROR, "The variable " + node->token.text + " is not existing!", node->token.pos);
+					error_handler_.report(ErrorType::SEMANTIC_ERROR, "The variable '" + node->token.text + "' does not exists", node->token.pos);
 			}
 			else if (!symbol_table_.isDeclared(node->token.text))
-				error_handler_.report(ErrorType::SEMANTIC_ERROR, "The variable " + node->token.text + " is not existing!", node->token.pos);
+				error_handler_.report(ErrorType::SEMANTIC_ERROR, "The variable '" + node->token.text + "' does not exists", node->token.pos);
 		}
 	}
 

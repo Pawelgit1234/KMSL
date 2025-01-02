@@ -152,10 +152,7 @@ namespace kmsl
 			return expressionNode;
 		}
 
-		if (pos_ < tokens_.size())
-			error_handler_.report(ErrorType::SYNTAX_ERROR, "Expectet another value", tokens_[pos_].pos);
-		else
-			error_handler_.report(ErrorType::SYNTAX_ERROR, "Expectet another value", current_token_.pos);
+		error_handler_.report(ErrorType::SYNTAX_ERROR, "Expected another value", pos_ < tokens_.size() ? tokens_[pos_].pos : current_token_.pos);
 
 		pos_++;
 		return std::unique_ptr<AstNode>();

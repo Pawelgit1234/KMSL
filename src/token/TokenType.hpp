@@ -7,10 +7,12 @@ namespace kmsl
 {
 	enum class TokenType
 	{
-		/* Keywords */
+		/* Constructions */
 		IF, ELSE,
 		WHILE, FOR, BREAK, CONTINUE,
-		PRINT, INPUT,
+
+		/* Basic Functions */
+		WAIT, EXIT, RANDOM, OS, DO, PRINT, INPUT,
 
 		/* Extra */
 		YEAR, MONTH, WEEK, DAY, HOUR, MINUTE, SECOND, MILLI, // time
@@ -18,7 +20,6 @@ namespace kmsl
 		READFILE, WRITEFILE, APPENDFILE, CREATEFILE, // file operations
 		CREATEDIR, // dir operations
 		REMOVE, COPY, RENAME, EXISTS, // dir and file operations
-		WAIT, EXIT, RANDOM, OS, DO, // other
 
 		/* Mouse & Keyboard */
 		MOVE, DMOVE, SCROLL, TYPE, PRESS, HOLD, RELEASE, GETX, GETY, STATE,
