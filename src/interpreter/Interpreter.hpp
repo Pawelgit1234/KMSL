@@ -45,7 +45,7 @@ namespace kmsl
 		void runConsole();
 
 		void setLoggingEnabled(bool logging_enabled) { logging_enabled_ = logging_enabled; }
-		void setCode(const std::string& c);
+		void setCode(const std::string& c, bool auto_visit = false); // auto_visit for DO
 
 	private:
 		variant visitNode(AstNode* node);

@@ -72,7 +72,7 @@ namespace kmsl
 		}
 	}
 
-	void Interpreter::setCode(const std::string& c)
+	void Interpreter::setCode(const std::string& c, bool auto_visit)
 	{
 		has_errors_ = false;
 
@@ -90,7 +90,7 @@ namespace kmsl
 		}
 
 		kmsl::Parser parser(tokens, error_handler_);
-		root_ = parser.parse();
+		std::unique_ptr<BlockNode> ast = parser.parse();
 
 		if (error_handler_.getErrorsCount() > 0)
 		{
@@ -103,10 +103,10 @@ namespace kmsl
 		if (logging_enabled_)
 		{
 			std::cout << "PARSER: " << std::endl;
-			std::cout << root_->toString() << std::endl << std::endl;
+			std::cout << ast->toString() << std::endl << std::endl;
 		}
 
-		kmsl::SemanticAnalyzer semantic(root_, error_handler_);
+		kmsl::SemanticAnalyzer semantic(ast, error_handler_);
 		if (console_running_)
 			semantic.set_symbols(&symbols_);
 		semantic.analyze();
@@ -121,6 +121,22 @@ namespace kmsl
 
 		if (logging_enabled_)
 			std::cout << "SEMANTIC ANALYZER: OK" << std::endl << "PROGRAM OUTPUT:" << std::endl;
+
+		// DO code must not be setted in root_
+		if (auto_visit) 
+		{
+			visit(ast.get());
+
+			if (error_handler_.getErrorsCount() > 0)
+			{
+				error_handler_.showErrors();
+				has_errors_ = true;
+				error_handler_.clearErrors();
+				return;
+			}
+		}
+		else
+			root_ = std::move(ast);
 	}
 
 	variant Interpreter::visitNode(AstNode* node)
@@ -249,6 +265,7 @@ namespace kmsl
 				unarOpNode->op.type == TokenType::PLUS || 
 				unarOpNode->op.type == TokenType::MINUS || 
 				unarOpNode->op.type == TokenType::BIT_NOT || 
+				unarOpNode->op.type == TokenType::STATE ||
 				unarOpNode->op.type == TokenType::LOGICAL_NOT))) && console_running_)
 			{
 				is_printable_ = true;
@@ -467,7 +484,6 @@ namespace kmsl
 			int intValue;
 			float floatValue;
 
-	
 			if (ss >> intValue && ss.eof()) 
 				variable = intValue;
 			else 
@@ -497,6 +513,8 @@ namespace kmsl
 
 			if (std::holds_alternative<std::string>(operand))
 				key = std::get<std::string>(operand);
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "STATE parameter should be string", node->op.pos);
 
 			return IoController::getState(key);
 		}
@@ -505,12 +523,17 @@ namespace kmsl
 			variant operand = visitNode(node->operand.get());
 			float time;
 
-			if (std::holds_alternative<int>(operand))
-				time = static_cast<float>(std::get<int>(operand));
-			else if (std::holds_alternative<float>(operand))
-				time = std::get<float>(operand);
+			if (std::holds_alternative<int>(operand) || std::holds_alternative<float>(operand))
+			{
+				if (std::holds_alternative<int>(operand))
+					time = static_cast<float>(std::get<int>(operand));
+				else if (std::holds_alternative<float>(operand))
+					time = std::get<float>(operand);
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(time * 1000)));
+				std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(time * 1000)));
+			}
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "WAIT parameter should be int/float", node->op.pos);
 		}
 		else if (op == TokenType::OS)
 		{
@@ -518,43 +541,63 @@ namespace kmsl
 			std::string command;
 
 			if (std::holds_alternative<std::string>(operand))
+			{
 				command = std::get<std::string>(operand);
-
-			std::system(command.c_str());
+				std::system(command.c_str());
+			}
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "OS parameter should be string", node->op.pos);
 		}
 		else if (op == TokenType::SIN || op == TokenType::COS || op == TokenType::TAN || op == TokenType::ACOS || op == TokenType::ASIN || op == TokenType::ATAN || op == TokenType::ABS || op == TokenType::RCEIL || op == TokenType::RFLOOR)
 		{
 			variant operand = visitNode(node->operand.get());
 			float n;
 
-			if (std::holds_alternative<int>(operand))
-				n = static_cast<float>(std::get<int>(operand));
-			else if (std::holds_alternative<float>(operand))
-				n = std::get<float>(operand);
-
-			switch (op)
+			if (std::holds_alternative<int>(operand) || std::holds_alternative<float>(operand))
 			{
-			case TokenType::SIN:
-				return std::abs(std::sin(n)) < 1e-7 ? 0.0f : std::sin(n);
-			case TokenType::COS:
-				return std::cos(n);
-			case TokenType::TAN:
-				return std::abs(std::tan(n)) < 1e-7 ? 0.0f : std::tan(n);
-			case TokenType::ASIN:
-				return std::asin(n);
-			case TokenType::ACOS:
-				return std::acos(n);
-			case TokenType::ATAN:
-				return std::atan(n);
-			case TokenType::ABS:
-				return std::abs(n);
-			case TokenType::RCEIL:
-				return (int) std::ceil(n);
-			case TokenType::RFLOOR:
-				return (int) std::floor(n);
-			default:
-				break;
+				if (std::holds_alternative<int>(operand))
+					n = static_cast<float>(std::get<int>(operand));
+				else if (std::holds_alternative<float>(operand))
+					n = std::get<float>(operand);
+
+				switch (op)
+				{
+				case TokenType::SIN:
+					return std::abs(std::sin(n)) < 1e-7 ? 0.0f : std::sin(n);
+				case TokenType::COS:
+					return std::cos(n);
+				case TokenType::TAN:
+					return std::abs(std::tan(n)) < 1e-7 ? 0.0f : std::tan(n);
+				case TokenType::ASIN:
+					if (n <= 1 && n >= -1)
+						return std::asin(n);
+					else
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "ASIN takes only numbers from -1 to 1", node->op.pos);
+					break;
+				case TokenType::ACOS:
+					if (n <= 1 && n >= -1)
+						return std::acos(n);
+					else
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "ACOS takes only numbers from -1 to 1", node->op.pos);
+					break;
+				case TokenType::ATAN:
+					if (n <= 1 && n >= -1)
+						return std::atan(n);
+					else
+						error_handler_.report(ErrorType::RUNTIME_ERROR, "ATAN takes only numbers from -1 to 1", node->op.pos);
+					break;
+				case TokenType::ABS:
+					return std::abs(n);
+				case TokenType::RCEIL:
+					return (int)std::ceil(n);
+				case TokenType::RFLOOR:
+					return (int)std::floor(n);
+				default:
+					break;
+				}
 			}
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "Math functions takes only int/float", node->op.pos);
 		}
 		else if (op == TokenType::CREATEFILE)
 		{
@@ -562,10 +605,17 @@ namespace kmsl
 			std::string filename;
 
 			if (std::holds_alternative<std::string>(operand))
+			{
 				filename = std::get<std::string>(operand);
+				std::ofstream file(filename);
 
-			std::ofstream outfile(filename);
-			outfile.close();
+				if (!file.is_open())
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' cannot be created", node->op.pos);
+				else
+					file.close();
+			}
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "CREATEFFILE parameter should be string", node->op.pos);
 		}
 		else if (op == TokenType::REMOVE)
 		{
@@ -573,9 +623,15 @@ namespace kmsl
 			std::string filename;
 
 			if (std::holds_alternative<std::string>(operand))
+			{
 				filename = std::get<std::string>(operand);
-
-			std::filesystem::remove(filename);
+				if (std::filesystem::exists(filename))
+					std::filesystem::remove(filename);
+				else
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' does not exists", node->op.pos);
+			}
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "REMOVE parameter should be string", node->op.pos);
 		}
 		else if (op == TokenType::READFILE)
 		{
@@ -583,12 +639,20 @@ namespace kmsl
 			std::string filename;
 
 			if (std::holds_alternative<std::string>(operand))
-				filename = std::get<std::string>(operand);
+			{
+				if (std::filesystem::exists(filename))
+				{
+					filename = std::get<std::string>(operand);
+					kmsl::FileReader fr(filename);
+					std::string text = fr.read();
 
-			kmsl::FileReader fr(filename);
-			std::string text = fr.read();
-
-			return text;
+					return text;
+				}
+				else 
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' cannot be open", node->op.pos);
+			}
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "READFILE parameter should be string", node->op.pos);
 		}
 		else if (op == TokenType::EXISTS)
 		{
@@ -596,9 +660,12 @@ namespace kmsl
 			std::string filename;
 
 			if (std::holds_alternative<std::string>(operand))
+			{
 				filename = std::get<std::string>(operand);
-
-			return std::filesystem::exists(filename);
+				return std::filesystem::exists(filename);
+			}
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "EXISTS parameter should be string", node->op.pos);
 		}
 		else if (op == TokenType::CREATEDIR)
 		{
@@ -606,9 +673,12 @@ namespace kmsl
 			std::string dirname;
 
 			if (std::holds_alternative<std::string>(operand))
+			{
 				dirname = std::get<std::string>(operand);
-
-			std::filesystem::create_directory(dirname);
+				std::filesystem::create_directory(dirname);
+			}
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "CREATEDIR parameter should be string", node->op.pos);
 		}
 		else if (op == TokenType::DO)
 		{
@@ -617,16 +687,12 @@ namespace kmsl
 
 			if (std::holds_alternative<std::string>(operand))
 				code = std::get<std::string>(operand);
+			else
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "DO parameter should be string", node->op.pos);
 
-			Lexer l(code);
-			std::vector<Token> tokens = l.scanTokens();
-			Parser p(tokens, error_handler_);
-			std::unique_ptr<BlockNode> ast = p.parse();
-			SemanticAnalyzer s(ast, error_handler_);
-			if (console_running_)
-				s.set_symbols(&symbols_);
-			s.analyze();
-			visitNode(ast->getStatements()[0].get());
+			deepness_--; // let the variable in DO code to has right deepness
+			setCode(code, true); 
+			deepness_++;
 		}
 
 		return variant();
@@ -1302,8 +1368,8 @@ namespace kmsl
 
 	variant Interpreter::visit(ForNode* node)
 	{
-		deepness_++;
-		visitNode(node->initializerNode.get()); // the var must be deleted after using in 'for'
+		deepness_++; // increasing the deepnees helps to delete the variable in the FOR loop (FOR (i = 0, ..., ...)  )
+		visitNode(node->initializerNode.get());
 		deepness_--;
 
 		while (true)
