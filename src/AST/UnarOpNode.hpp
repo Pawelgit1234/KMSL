@@ -18,6 +18,11 @@ namespace kmsl
 			return "UnarOpNode(" + op.text + ", " + operand->toString() + ")";
 		}
 
+		std::unique_ptr<AstNode> clone() const override
+		{
+			return std::unique_ptr<UnarOpNode>(std::make_unique<UnarOpNode>(op, operand->clone()));
+		}
+
 		Token op;
 		std::unique_ptr<AstNode> operand;
 	};

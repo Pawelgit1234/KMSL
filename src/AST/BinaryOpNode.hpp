@@ -13,10 +13,6 @@ namespace kmsl
 		BinaryOpNode(const Token& oper, std::unique_ptr<AstNode> left, std::unique_ptr<AstNode> right)
 			: op(oper), leftOperand(std::move(left)), rightOperand(std::move(right)) {}
 
-		BinaryOpNode(const BinaryOpNode& other)
-			: op(other.op), leftOperand(std::make_unique<AstNode>(*other.leftOperand)),
-			rightOperand(std::make_unique<AstNode>(*other.rightOperand)) {}
-
 		std::string toString() const override
 		{
 			std::string result = "BinaryOpNode(" + op.text + ", " + leftOperand->toString();
@@ -27,6 +23,11 @@ namespace kmsl
 				result += ", nullptr)";
 
 			return result;
+		}
+
+		std::unique_ptr<AstNode> clone() const override
+		{
+			return std::make_unique<BinaryOpNode>(op, leftOperand->clone(), rightOperand ? rightOperand->clone() : nullptr);
 		}
 
 		Token op;

@@ -33,6 +33,16 @@ namespace kmsl
             return result;
         }
 
+        std::unique_ptr<AstNode> clone() const override
+        {
+            std::unique_ptr<BlockNode> node = std::make_unique<BlockNode>();
+
+            for (auto& s : statements_)
+                node->addStatement(s->clone());
+
+            return node;
+        }
+
     private:
         std::vector<std::unique_ptr<AstNode>> statements_;
     };

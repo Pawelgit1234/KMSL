@@ -40,6 +40,11 @@ namespace kmsl
             return result;
         }
 
+        std::unique_ptr<AstNode> clone() const override
+        {
+            return std::unique_ptr<MouseNode>(std::make_unique<MouseNode>(token, xNode->clone(), yNode->clone(), tNode ? tNode->clone() : nullptr));
+        }
+
         Token token; // move or dmove 
         std::unique_ptr<AstNode> xNode;
         std::unique_ptr<AstNode> yNode;

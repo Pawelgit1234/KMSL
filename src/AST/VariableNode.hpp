@@ -18,6 +18,11 @@ namespace kmsl
 			return "Variable(" + token.text + ")";
 		}
 
+		std::unique_ptr<AstNode> clone() const override
+		{
+			return std::unique_ptr<VariableNode>(std::make_unique<VariableNode>(token));
+		}
+
 		Token token;
 	};
 }

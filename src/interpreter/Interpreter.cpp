@@ -733,295 +733,7 @@ namespace kmsl
 		case TokenType::BIT_LEFT_SHIFT_ASSIGN:
 		case TokenType::BIT_RIGHT_SHIFT_ASSIGN:
 		{
-			auto variableNode = dynamic_cast<VariableNode*>(node->leftOperand.get());
-			variant& value = visit(variableNode);
-			variant valueNode = visitNode(node->rightOperand.get());
-
-			if (std::holds_alternative<int>(value) && std::holds_alternative<int>(valueNode))
-			{
-				int& var = std::get<int>(value);
-				int val = std::get<int>(valueNode);
-
-				switch (node->op.type)
-				{
-				case TokenType::PLUS_ASSIGN: var += val; break;
-				case TokenType::MINUS_ASSIGN: var -= val; break;
-				case TokenType::MULTIPLY_ASSIGN: var *= val; break;
-				case TokenType::DIVIDE_ASSIGN:
-				{
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
-						var = 0;
-					}
-					else
-					{
-						// a /= n -----> a = a / n
-						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::DIVIDE, "/", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-						visit(fullNewNode.get());
-					}
-					break;
-				}
-				case TokenType::MODULO_ASSIGN: 
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Modulo by zero", node->op.pos);
-						var = 0;
-					}
-					else
-						var %= val;
-					break;
-				case TokenType::BIT_AND_ASSIGN: var &= val; break;
-				case TokenType::BIT_OR_ASSIGN: var |= val; break;
-				case TokenType::BIT_XOR_ASSIGN: var ^= val; break;
-				case TokenType::BIT_LEFT_SHIFT_ASSIGN: var <<= val; break;
-				case TokenType::BIT_RIGHT_SHIFT_ASSIGN: var >>= val; break;
-				case TokenType::FLOOR_ASSIGN: 
-				{
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero in floor operation", node->op.pos);
-						var = 0;
-					}
-					else
-						var /= val;
-					break;
-				case TokenType::POWER_ASSIGN:
-					if (val >= 0)
-						var = std::pow(var, val);
-					else
-					{
-						// a **= n -----> a = a ** n
-						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::POWER, "**", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-						visit(fullNewNode.get());
-					}
-					break;
-				}
-				case TokenType::ROOT_ASSIGN:
-				{
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
-						var = 0;
-					}
-					else
-					{
-						// a %%= n -----> a = a %% n
-						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::ROOT, "%%", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-						visit(fullNewNode.get());
-					}
-					break;
-				}
-				case TokenType::LOG_ASSIGN:
-				{
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);
-						var = 0;
-					}
-					else
-					{
-						// a ^^= n -----> a = a ^^ n
-						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::LOG, "^^", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-						visit(fullNewNode.get());
-					}
-					break;
-				}
-				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assigment operation", node->op.pos);
-				}
-			}
-			else if (std::holds_alternative<int>(value) && std::holds_alternative<float>(valueNode))
-			{
-				int& var = std::get<int>(value);
-				float val = std::get<float>(valueNode);
-
-				switch (node->op.type)
-				{
-				case TokenType::PLUS_ASSIGN:
-				{
-					// a += n -----> a = a + n
-					std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::PLUS, "+", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-					std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-					visit(fullNewNode.get());
-					break;
-				}
-				case TokenType::MINUS_ASSIGN:
-				{
-					// a -= n -----> a = a - n
-					std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::MINUS, "-", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-					std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-					visit(fullNewNode.get());
-					break;
-				}
-				case TokenType::MULTIPLY_ASSIGN:
-				{
-					// a *= n -----> a = a * n
-					std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::MULTIPLY , "*", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-					std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-					visit(fullNewNode.get());
-					break;
-				}
-				case TokenType::DIVIDE_ASSIGN:
-				{
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
-						var = 0;
-					}
-					else
-					{
-						// a /= n -----> a = a / n
-						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::DIVIDE, "/", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-						visit(fullNewNode.get());
-						break;
-					}
-				}
-				case TokenType::FLOOR_ASSIGN:
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero in floor operation", node->op.pos);
-						var = 0;
-					}
-					else
-						var = static_cast<int>(std::floor(var / val));
-				case TokenType::POWER_ASSIGN:
-				{
-					// a **= n -----> a = a * n
-					std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::MULTIPLY, "*", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-					std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-					visit(fullNewNode.get());
-					break;
-				}
-				case TokenType::ROOT_ASSIGN:
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
-						var = 0;
-					}
-					else
-					{
-						// a += n -----> a = a + n
-						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::ROOT, "%%", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-						visit(fullNewNode.get());
-						break;
-					}
-					break;
-				case TokenType::LOG_ASSIGN:
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);
-						var = 0;
-					}
-					else
-					{
-						// a ^^= n -----> a = a ^^ n
-						std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(Token(TokenType::LOG, "^^", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(node->rightOperand)));
-						std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), std::make_unique<VariableNode>(variableNode->token), std::move(newNode)));
-						visit(fullNewNode.get());
-						break;
-					}
-					break;
-				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assignment operation for float", node->op.pos);
-				}
-			}
-			else if ((std::holds_alternative<float>(value) && std::holds_alternative<int>(valueNode)) ||
-					 (std::holds_alternative<float>(value) && std::holds_alternative<float>(valueNode)))
-			{
-				float& var = std::holds_alternative<int>(value) ? *reinterpret_cast<float*>(&std::get<int>(value)) : std::get<float>(value);
-				float val = std::holds_alternative<int>(valueNode) ? static_cast<float>(std::get<int>(valueNode)) : std::get<float>(valueNode);
-
-				switch (node->op.type)
-				{
-				case TokenType::PLUS_ASSIGN: var += val; break;
-				case TokenType::MINUS_ASSIGN: var -= val; break;
-				case TokenType::MULTIPLY_ASSIGN: var *= val; break;
-				case TokenType::DIVIDE_ASSIGN:
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero", node->op.pos);
-						var = 0;
-					}
-					else
-						var /= val;
-					break;
-				case TokenType::FLOOR_ASSIGN:
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Division by zero in floor operation", node->op.pos);
-						var = 0;
-					}
-					else
-						var = static_cast<int>(std::floor(var / val));
-				case TokenType::POWER_ASSIGN: var = std::pow(var, val); break;
-				case TokenType::ROOT_ASSIGN:
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Root degree must be greater than zero", node->op.pos);
-						var = 0;
-					}
-					else
-						var = std::pow(var, 1.0f / val);
-					break;
-				case TokenType::LOG_ASSIGN: 
-					if (val == 0)
-					{
-						error_handler_.report(ErrorType::RUNTIME_ERROR, "Logarithm base and argument must be greater than zero", node->op.pos);
-						var = 0;
-					}
-					else
-						var = std::log(var) / std::log(val);
-					break;
-				default: error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported assignment operation for float", node->op.pos);
-				}
-			}
-			else if (((std::holds_alternative<std::string>(value) && std::holds_alternative<int>(valueNode)) ||
-				(std::holds_alternative<int>(value) && std::holds_alternative<std::string>(valueNode))) && node->op.type == TokenType::MULTIPLY_ASSIGN)
-			{
-				std::string& var = std::holds_alternative<std::string>(value) ? std::get<std::string>(value) : std::get<std::string>(valueNode);
-				int times = std::holds_alternative<int>(value) ? std::get<int>(value) : std::get<int>(valueNode);
-
-				if (times < 0)
-					error_handler_.report(ErrorType::RUNTIME_ERROR, "Cannot multiply string by a negative number", node->op.pos);
-				else
-				{
-					if (times != 0)
-					{
-						std::string string = var;
-						for (int i = 1; i < times; i++)
-							var += string;
-					}
-					else
-						var = "";
-				}
-			}
-			else if ((std::holds_alternative<std::string>(value) && std::holds_alternative<std::string>(valueNode)) ||
-					(std::holds_alternative<std::string>(value) && std::holds_alternative<int>(valueNode)) ||
-					(std::holds_alternative<std::string>(value) && std::holds_alternative<float>(valueNode)) ||
-					(std::holds_alternative<std::string>(value) && std::holds_alternative<bool>(valueNode)))
-			{
-				std::string& var = std::get<std::string>(value);
-				std::string val;
-
-				if (std::holds_alternative<std::string>(valueNode))
-					val = std::get<std::string>(valueNode);
-				else if (std::holds_alternative<int>(valueNode))
-					val = std::to_string(std::get<int>(valueNode));
-				else if (std::holds_alternative<float>(valueNode))
-					val = std::to_string(std::get<float>(valueNode));
-				else if (std::holds_alternative<bool>(valueNode))
-					val = (std::get<bool>(valueNode)) ? "TRUE" : "FALSE";
-
-				var += val;
-			}
-			else
-				error_handler_.report(ErrorType::RUNTIME_ERROR, "Unsupported types for assignment operation", node->op.pos);
-
+			expand_argumented_assigments(node);
 			break;
 		}
 		case TokenType::MULTIPLY:
@@ -1337,7 +1049,6 @@ namespace kmsl
 
 				break;
 			case TokenType::RENAME:
-				
 				if (!std::filesystem::exists(filename))
 					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' cannot be found", node->op.pos);
 				else
@@ -1505,8 +1216,6 @@ namespace kmsl
 			IoController::release(buttons);
 			break;
 		}
-		default:
-			break;
 		}
 
 		return variant();
@@ -1563,6 +1272,21 @@ namespace kmsl
 		else if (node->type.type == TokenType::EXIT)
 			exit_program_ = true;
 		return variant();
+	}
+
+	// a o= n -----> a = a o n (o -> operator)
+	// e.g. a += 2 ----> a = a + 2
+	void Interpreter::expand_argumented_assigments(BinaryOpNode* node)
+	{
+		auto variableNode = dynamic_cast<VariableNode*>(node->leftOperand.get());
+
+		std::string text = node->op.text.substr(0, node->op.text.size() - 1); // delete the =
+		Lexer l(text); // get the type
+		Token newToken = Token(l.scanTokens()[0].type, text, node->op.pos);
+
+		std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(newToken, node->leftOperand->clone(), node->rightOperand->clone()));
+		std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), node->leftOperand->clone(), std::move(newNode)));
+		visit(fullNewNode.get());
 	}
 
 }

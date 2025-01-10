@@ -16,6 +16,11 @@ namespace kmsl
             return "Literal(" + token.text + ")";
         }
 
+        std::unique_ptr<AstNode> clone() const override
+        {
+            return std::unique_ptr<LiteralNode>(std::make_unique<LiteralNode>(token));
+        }
+
         Token token;
     };
 }

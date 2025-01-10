@@ -18,6 +18,11 @@ namespace kmsl
             return "While(\n  Condition: " + conditionNode->toString() + ",\n  Body: " + bodyNode->toString() + "\n)";
         }
 
+        std::unique_ptr<AstNode> clone() const override
+        {
+            return std::unique_ptr<WhileNode>(std::make_unique<WhileNode>(conditionNode->clone(), bodyNode->clone(), token));
+        }
+
         std::unique_ptr<AstNode> conditionNode;
         std::unique_ptr<AstNode> bodyNode;
         Token token; // for error handling

@@ -18,6 +18,11 @@ namespace kmsl
             return "If(\n  Condition: " + conditionNode->toString() + ",\n  Then: " + thenBranchNode->toString() + ",\n  Else: " + (elseBranchNode ? elseBranchNode->toString() : "null") + "\n)";
         }
 
+        std::unique_ptr<AstNode> clone() const override
+        {
+            return std::unique_ptr<IfNode>(std::make_unique<IfNode>(conditionNode->clone(), thenBranchNode->clone(), elseBranchNode ? elseBranchNode->clone() : nullptr, token));
+        }
+
         std::unique_ptr<AstNode> conditionNode;
         std::unique_ptr<AstNode> thenBranchNode;
         std::unique_ptr<AstNode> elseBranchNode;

@@ -61,6 +61,8 @@ namespace kmsl
 		variant visit(MouseNode* node);
 		variant visit(CommandNode* node);
 
+		void expand_argumented_assigments(BinaryOpNode* node); // a o= n -----> a = a o n (o - operator)
+
 		ErrorHandler error_handler_;
 		std::vector<Variable> variables_;
 		std::unique_ptr<BlockNode> root_;

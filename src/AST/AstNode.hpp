@@ -10,6 +10,6 @@ namespace kmsl
 	public:
 		virtual ~AstNode() {}
 		virtual std::string toString() const { return "Base Class"; }
-		std::unique_ptr<AstNode> clone() const { return std::make_unique<AstNode>(*this); }
+		virtual std::unique_ptr<AstNode> clone() const { return std::make_unique<AstNode>(); };
 	};
 }

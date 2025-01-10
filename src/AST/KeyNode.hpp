@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <memory>
 #include <vector>
@@ -36,6 +36,17 @@ namespace kmsl
 
             oss << ")";
             return oss.str();
+        }
+
+        std::unique_ptr<AstNode> clone() const override
+        {
+            std::vector<std::unique_ptr<AstNode>> nodes;
+            nodes.reserve(buttonNodes.size());
+
+            for (const auto& b : buttonNodes)
+                nodes.push_back(b->clone());
+            
+            return std::make_unique<KeyNode>(token, std::move(nodes));
         }
 
         Token token; // HOLD, RELEASE or PRESS

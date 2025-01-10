@@ -17,6 +17,11 @@ namespace kmsl
             return "CommandNode(" + type.text + ")";
         }
 
+        std::unique_ptr<AstNode> clone() const override
+        {
+            return std::unique_ptr<CommandNode>(std::make_unique<CommandNode>(type));
+        }
+
         Token type;
     };
 }
