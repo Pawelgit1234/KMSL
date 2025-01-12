@@ -122,6 +122,8 @@ namespace kmsl
 		if (logging_enabled_)
 			std::cout << "SEMANTIC ANALYZER: OK" << std::endl << "PROGRAM OUTPUT:" << std::endl;
 
+		std::srand(std::time(0));
+
 		// DO code must not be setted in root_
 		if (auto_visit) 
 		{
