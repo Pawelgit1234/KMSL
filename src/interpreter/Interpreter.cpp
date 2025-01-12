@@ -150,9 +150,7 @@ namespace kmsl
 			if (console_running_ && is_printable_)
 			{
 				is_printable_ = false;
-
-				UnarOpNode printNode(Token(TokenType::PRINT, "print", literalNode->token.pos), std::make_unique<LiteralNode>(*literalNode));
-				visit(&printNode);
+				make_print<LiteralNode>(literalNode, literalNode->token);
 			}
 			else
 				return visit(literalNode);
@@ -162,9 +160,7 @@ namespace kmsl
 			if (console_running_ && is_printable_)
 			{
 				is_printable_ = false;
-
-				UnarOpNode printNode(Token(TokenType::PRINT, "print", unarOpNode->op.pos), std::make_unique<UnarOpNode>(std::move(*unarOpNode)));
-				visit(&printNode);
+				make_print<LiteralNode>(literalNode, literalNode->token);
 			}
 			else
 				return visit(unarOpNode);
@@ -174,24 +170,10 @@ namespace kmsl
 			if (console_running_ && is_printable_)
 			{
 				is_printable_ = false;
-
-				variant value = visit(binaryOpNode);
-				Token t;
-
-				if (std::holds_alternative<int>(value))
-					t = Token(TokenType::INT, std::to_string(std::get<int>(value)), binaryOpNode->op.pos);
-				else if (std::holds_alternative<float>(value))
-					t = Token(TokenType::FLOAT, std::to_string(std::get<float>(value)), binaryOpNode->op.pos);
-				else if (std::holds_alternative<std::string>(value))
-					t = Token(TokenType::STRING, std::get<std::string>(value), binaryOpNode->op.pos);
-				else if (std::holds_alternative<bool>(value))
-					t = Token(TokenType::BOOL, std::get<bool>(value) ? "TRUE": "FALSE", binaryOpNode->op.pos);
-
-				UnarOpNode printNode(Token(TokenType::PRINT, "print", binaryOpNode->op.pos), std::make_unique<LiteralNode>(t));
-				visit(&printNode);
+				make_print<LiteralNode>(literalNode, literalNode->token);
 			}
-
-			return visit(binaryOpNode);;
+			else
+				return visit(binaryOpNode);
 		}
 		else if (auto ifNode = dynamic_cast<IfNode*>(node))
 			return visit(ifNode);
@@ -1274,7 +1256,7 @@ namespace kmsl
 		return variant();
 	}
 
-	// a o= n -----> a = a o n (o -> operator)
+	// a o= n -----> a = a o n (o = operator)
 	// e.g. a += 2 ----> a = a + 2
 	void Interpreter::expand_argumented_assigments(BinaryOpNode* node)
 	{
@@ -1289,4 +1271,10 @@ namespace kmsl
 		visit(fullNewNode.get());
 	}
 
+	template<typename NodeType>
+	void Interpreter::make_print(NodeType* node, const Token& token)
+	{
+		UnarOpNode printNode(Token(TokenType::PRINT, "print", token.pos), std::make_unique<NodeType>(*node));
+		visit(&printNode);
+	}
 }

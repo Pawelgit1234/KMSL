@@ -62,7 +62,9 @@ namespace kmsl
 		variant visit(CommandNode* node);
 
 		void expand_argumented_assigments(BinaryOpNode* node); // a o= n -----> a = a o n (o - operator)
-
+		template <typename NodeType>
+		void make_print(NodeType* node, const Token& token); // a + b -----> print a + b (this is just for console)
+ 
 		ErrorHandler error_handler_;
 		std::vector<Variable> variables_;
 		std::unique_ptr<BlockNode> root_;
