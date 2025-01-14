@@ -1,7 +1,7 @@
 #pragma once
 
 #include "AstNode.hpp"
-#include "BinaryOpNode.hpp"
+#include "BinarOpNode.hpp"
 #include "BlockNode.hpp"
 #include "ForNode.hpp"
 #include "IfNode.hpp"

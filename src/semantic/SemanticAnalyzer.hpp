@@ -23,7 +23,7 @@ namespace kmsl
 		void visit(BlockNode* node);
 		void visit(VariableNode* node);
 		void visit(UnarOpNode* node);
-		void visit(BinaryOpNode* node);
+		void visit(BinarOpNode* node);
 		void visit(IfNode* node);
 		void visit(ForNode* node);
 		void visit(WhileNode* node);
@@ -32,7 +32,7 @@ namespace kmsl
 		void visit(CommandNode* node);
 
 		DataType determineType(AstNode* node);
-		DataType determineBinaryOpType(BinaryOpNode* node);
+		DataType determineBinaryOpType(BinarOpNode* node);
 
 		ErrorHandler& error_handler_;
 

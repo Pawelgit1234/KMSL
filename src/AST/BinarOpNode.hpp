@@ -7,10 +7,10 @@
 
 namespace kmsl
 {
-	class BinaryOpNode : public AstNode
+	class BinarOpNode : public AstNode
 	{
 	public:
-		BinaryOpNode(const Token& oper, std::unique_ptr<AstNode> left, std::unique_ptr<AstNode> right)
+		BinarOpNode(const Token& oper, std::unique_ptr<AstNode> left, std::unique_ptr<AstNode> right)
 			: op(oper), leftOperand(std::move(left)), rightOperand(std::move(right)) {}
 
 		std::string toString() const override
@@ -27,7 +27,7 @@ namespace kmsl
 
 		std::unique_ptr<AstNode> clone() const override
 		{
-			return std::make_unique<BinaryOpNode>(op, leftOperand->clone(), rightOperand ? rightOperand->clone() : nullptr);
+			return std::make_unique<BinarOpNode>(op, leftOperand->clone(), rightOperand ? rightOperand->clone() : nullptr);
 		}
 
 		Token op;

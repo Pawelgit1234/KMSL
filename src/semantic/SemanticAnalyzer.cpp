@@ -18,7 +18,7 @@ namespace kmsl
 			visit(variableNode);
 		else if (auto unarOpNode = dynamic_cast<UnarOpNode*>(node))
 			visit(unarOpNode);
-		else if (auto binaryOpNode = dynamic_cast<BinaryOpNode*>(node))
+		else if (auto binaryOpNode = dynamic_cast<BinarOpNode*>(node))
 			visit(binaryOpNode);
 		else if (auto ifNode = dynamic_cast<IfNode*>(node))
 			visit(ifNode);
@@ -132,7 +132,7 @@ namespace kmsl
 		}
 	}
 
-	void SemanticAnalyzer::visit(BinaryOpNode* node)
+	void SemanticAnalyzer::visit(BinarOpNode* node)
 	{
 		switch (node->op.type)
 		{
@@ -327,7 +327,7 @@ namespace kmsl
 			else if (unarOpNode->op.type == TokenType::LOGICAL_NOT)
 				return DataType::BOOL;
 		}
-		else if (auto binaryOpNode = dynamic_cast<BinaryOpNode*>(node))
+		else if (auto binaryOpNode = dynamic_cast<BinarOpNode*>(node))
 		{
 			visit(binaryOpNode);
 			return determineBinaryOpType(binaryOpNode);
@@ -335,7 +335,7 @@ namespace kmsl
 		return DataType::UNDEFINED;
 	}
 
-	DataType SemanticAnalyzer::determineBinaryOpType(BinaryOpNode* node)
+	DataType SemanticAnalyzer::determineBinaryOpType(BinarOpNode* node)
 	{
 		DataType leftType = determineType(node->leftOperand.get());
 		DataType rightType = determineType(node->rightOperand.get());

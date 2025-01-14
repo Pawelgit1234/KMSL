@@ -179,7 +179,7 @@
     <ClInclude Include="src\interpreter\Interpreter.hpp" />
     <ClInclude Include="src\AST\ast.hpp" />
     <ClInclude Include="src\AST\AstNode.hpp" />
-    <ClInclude Include="src\AST\BinaryOpNode.hpp" />
+    <ClInclude Include="src\AST\BinarOpNode.hpp" />
     <ClInclude Include="src\AST\BlockNode.hpp" />
     <ClInclude Include="src\AST\ForNode.hpp" />
     <ClInclude Include="src\AST\IfNode.hpp" />

@@ -59,7 +59,7 @@
     <ClInclude Include="src\AST\AstNode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\AST\BinaryOpNode.hpp">
+    <ClInclude Include="src\AST\BinarOpNode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\AST\UnarOpNode.hpp">

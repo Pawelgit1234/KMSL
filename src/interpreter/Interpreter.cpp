@@ -152,7 +152,7 @@ namespace kmsl
 			if (console_running_ && is_printable_)
 			{
 				is_printable_ = false;
-				make_print<LiteralNode>(literalNode, literalNode->token);
+				make_print(literalNode, literalNode->token);
 			}
 			else
 				return visit(literalNode);
@@ -162,20 +162,20 @@ namespace kmsl
 			if (console_running_ && is_printable_)
 			{
 				is_printable_ = false;
-				make_print<LiteralNode>(literalNode, literalNode->token);
+				make_print(unarOpNode, unarOpNode->op);
 			}
 			else
 				return visit(unarOpNode);
 		}
-		else if (auto binaryOpNode = dynamic_cast<BinaryOpNode*>(node))
+		else if (auto binarOpNode = dynamic_cast<BinarOpNode*>(node))
 		{
 			if (console_running_ && is_printable_)
 			{
 				is_printable_ = false;
-				make_print<LiteralNode>(literalNode, literalNode->token);
+				make_print(binarOpNode, binarOpNode->op);
 			}
 			else
-				return visit(binaryOpNode);
+				return visit(binarOpNode);
 		}
 		else if (auto ifNode = dynamic_cast<IfNode*>(node))
 			return visit(ifNode);
@@ -204,7 +204,7 @@ namespace kmsl
 				break;
 			}
 
-			auto binaryOpNode = dynamic_cast<BinaryOpNode*>(stmt.get());
+			auto binaryOpNode = dynamic_cast<BinarOpNode*>(stmt.get());
 			auto unarOpNode = dynamic_cast<UnarOpNode*>(stmt.get());
 
 			if (dynamic_cast<VariableNode*>(stmt.get()) || dynamic_cast<LiteralNode*>(stmt.get()) ||
@@ -624,9 +624,9 @@ namespace kmsl
 
 			if (std::holds_alternative<std::string>(operand))
 			{
+				filename = std::get<std::string>(operand);
 				if (std::filesystem::exists(filename))
 				{
-					filename = std::get<std::string>(operand);
 					kmsl::FileReader fr(filename);
 					std::string text = fr.read();
 
@@ -682,7 +682,7 @@ namespace kmsl
 		return variant();
 	}
 
-	variant Interpreter::visit(BinaryOpNode* node)
+	variant Interpreter::visit(BinarOpNode* node)
 	{
 		switch (node->op.type)
 		{
@@ -1260,7 +1260,7 @@ namespace kmsl
 
 	// a o= n -----> a = a o n (o = operator)
 	// e.g. a += 2 ----> a = a + 2
-	void Interpreter::expand_argumented_assigments(BinaryOpNode* node)
+	void Interpreter::expand_argumented_assigments(BinarOpNode* node)
 	{
 		auto variableNode = dynamic_cast<VariableNode*>(node->leftOperand.get());
 
@@ -1268,15 +1268,14 @@ namespace kmsl
 		Lexer l(text); // get the type
 		Token newToken = Token(l.scanTokens()[0].type, text, node->op.pos);
 
-		std::unique_ptr<BinaryOpNode> newNode(std::make_unique<BinaryOpNode>(newToken, node->leftOperand->clone(), node->rightOperand->clone()));
-		std::unique_ptr<BinaryOpNode> fullNewNode(std::make_unique<BinaryOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), node->leftOperand->clone(), std::move(newNode)));
+		std::unique_ptr<BinarOpNode> newNode(std::make_unique<BinarOpNode>(newToken, node->leftOperand->clone(), node->rightOperand->clone()));
+		std::unique_ptr<BinarOpNode> fullNewNode(std::make_unique<BinarOpNode>(Token(TokenType::ASSIGN, "=", node->op.pos), node->leftOperand->clone(), std::move(newNode)));
 		visit(fullNewNode.get());
 	}
 
-	template<typename NodeType>
-	void Interpreter::make_print(NodeType* node, const Token& token)
+	void Interpreter::make_print(AstNode* node, const Token& token)
 	{
-		UnarOpNode printNode(Token(TokenType::PRINT, "print", token.pos), std::make_unique<NodeType>(*node));
+		UnarOpNode printNode(Token(TokenType::PRINT, "print", token.pos), node->clone());
 		visit(&printNode);
 	}
 }

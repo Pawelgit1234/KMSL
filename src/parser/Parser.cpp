@@ -125,7 +125,7 @@ namespace kmsl
 		}
 		else if (match({ TokenType::TYPE, TokenType::SCROLL }).type != TokenType::INVALID)
 		{
-			std::unique_ptr<BinaryOpNode> typeNode = parseTypeAndScroll();
+			std::unique_ptr<BinarOpNode> typeNode = parseTypeAndScroll();
 			return typeNode;
 		}
 		else if (match({ TokenType::HOLD, TokenType::RELEASE, TokenType::PRESS }).type != TokenType::INVALID)
@@ -142,7 +142,7 @@ namespace kmsl
 		}
 		else if (match({ TokenType::WRITEFILE, TokenType::APPENDFILE, TokenType::COPY, TokenType::RENAME }).type != TokenType::INVALID) // Binar
 		{
-			std::unique_ptr<BinaryOpNode> filesystemNode = parseFileAndDir();
+			std::unique_ptr<BinarOpNode> filesystemNode = parseFileAndDir();
 			return filesystemNode;
 		}
 		else if (match({ TokenType::LPAR, TokenType::STRING, TokenType::INT, TokenType::FLOAT, TokenType::BOOL, TokenType::YEAR, TokenType::MONTH, TokenType::WEEK, TokenType::DAY, TokenType::HOUR, TokenType::MINUTE, TokenType::SECOND, TokenType::MILLI, TokenType::SIN, TokenType::COS, TokenType::TAN, TokenType::ASIN, TokenType::ACOS, TokenType::ATAN, TokenType::ABS, TokenType::RCEIL, TokenType::RFLOOR, TokenType::PI, TokenType::E, TokenType::PHI, TokenType::READFILE, TokenType::EXISTS, TokenType::GETX, TokenType::GETY, TokenType::STATE, TokenType::RANDOM, TokenType::PLUS, TokenType::MINUS, TokenType::LOGICAL_NOT, TokenType::BIT_NOT }).type != TokenType::INVALID)
@@ -170,7 +170,7 @@ namespace kmsl
 		else if (match({ TokenType::ASSIGN, TokenType::PLUS_ASSIGN, TokenType::MINUS_ASSIGN, TokenType::MULTIPLY_ASSIGN, TokenType::DIVIDE_ASSIGN, TokenType::MODULO_ASSIGN, TokenType::FLOOR_ASSIGN, TokenType::POWER_ASSIGN, TokenType::ROOT_ASSIGN, TokenType::LOG_ASSIGN, TokenType::BIT_AND_ASSIGN, TokenType::BIT_OR_ASSIGN, TokenType::BIT_XOR_ASSIGN, TokenType::BIT_LEFT_SHIFT_ASSIGN, TokenType::BIT_RIGHT_SHIFT_ASSIGN }).type != TokenType::INVALID)
 		{
 			Token assign = current_token_;
-			std::unique_ptr<BinaryOpNode> binarNode(std::make_unique<BinaryOpNode>(assign, std::move(varNode), std::move(parseExpression())));
+			std::unique_ptr<BinarOpNode> binarNode(std::make_unique<BinarOpNode>(assign, std::move(varNode), std::move(parseExpression())));
 			return binarNode;
 		}
 		else if (match({ TokenType::PLUS, TokenType::MINUS, TokenType::MULTIPLY, TokenType::DIVIDE, TokenType::MODULO, TokenType::FLOOR, TokenType::POWER, TokenType::ROOT, TokenType::LOG, TokenType::BIT_AND, TokenType::BIT_OR, TokenType::BIT_XOR, TokenType::BIT_LEFT_SHIFT, TokenType::BIT_RIGHT_SHIFT }).type != TokenType::INVALID)
@@ -203,7 +203,7 @@ namespace kmsl
 		return mouseNode;
 	}
 
-	std::unique_ptr<BinaryOpNode> Parser::parseTypeAndScroll()
+	std::unique_ptr<BinarOpNode> Parser::parseTypeAndScroll()
 	{
 
 		Token token = current_token_;
@@ -214,7 +214,7 @@ namespace kmsl
 			t = parseExpression();
 
 
-		std::unique_ptr<BinaryOpNode> typeNode = std::make_unique<BinaryOpNode>(
+		std::unique_ptr<BinarOpNode> typeNode = std::make_unique<BinarOpNode>(
 			token,
 			std::move(left),
 			std::move(t)
@@ -223,14 +223,14 @@ namespace kmsl
 		return typeNode;
 	}
 
-	std::unique_ptr<BinaryOpNode> Parser::parseFileAndDir()
+	std::unique_ptr<BinarOpNode> Parser::parseFileAndDir()
 	{
 		Token token = current_token_;
 		std::unique_ptr<AstNode> left = parseExpression();
 		require({ TokenType::COMMA });
 		std::unique_ptr<AstNode> right = parseExpression();
 
-		std::unique_ptr<BinaryOpNode> filesystemNode = std::make_unique<BinaryOpNode>(
+		std::unique_ptr<BinarOpNode> filesystemNode = std::make_unique<BinarOpNode>(
 			token,
 			std::move(left),
 			std::move(right)
@@ -418,7 +418,7 @@ namespace kmsl
 		while (match({ TokenType::MULTIPLY, TokenType::DIVIDE, TokenType::MODULO, TokenType::POWER, TokenType::FLOOR, TokenType::LOG, TokenType::ROOT, TokenType::BIT_AND, TokenType::BIT_OR, TokenType::BIT_XOR, TokenType::BIT_LEFT_SHIFT, TokenType::BIT_RIGHT_SHIFT }).type != TokenType::INVALID)
 		{
 			Token token = current_token_;
-			node = std::make_unique<BinaryOpNode>(token, std::move(node), std::move(parseFactor()));
+			node = std::make_unique<BinarOpNode>(token, std::move(node), std::move(parseFactor()));
 		}
 
 		return node;
@@ -460,7 +460,7 @@ namespace kmsl
 		while (match({ TokenType::PLUS, TokenType::MINUS, TokenType::LOGICAL_AND, TokenType::LOGICAL_OR, TokenType::LESS_THAN, TokenType::GREATER_THAN, TokenType::LESS_THAN_OR_EQUAL, TokenType::GREATER_THAN_OR_EQUAL, TokenType::EQUALS, TokenType::NOT_EQUALS }).type != TokenType::INVALID)
 		{
 			Token token = current_token_;
-			node = std::make_unique<BinaryOpNode>(token, std::move(node), std::move(parseTerm()));
+			node = std::make_unique<BinarOpNode>(token, std::move(node), std::move(parseTerm()));
 		}
 
 		return node;

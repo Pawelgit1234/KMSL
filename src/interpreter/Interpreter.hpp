@@ -52,7 +52,7 @@ namespace kmsl
 		variant visit(BlockNode* node);
 		variant& visit(VariableNode* node);
 		variant visit(UnarOpNode* node);
-		variant visit(BinaryOpNode* node);
+		variant visit(BinarOpNode* node);
 		variant visit(IfNode* node);
 		variant visit(ForNode* node);
 		variant visit(WhileNode* node);
@@ -61,9 +61,11 @@ namespace kmsl
 		variant visit(MouseNode* node);
 		variant visit(CommandNode* node);
 
-		void expand_argumented_assigments(BinaryOpNode* node); // a o= n -----> a = a o n (o - operator)
-		template <typename NodeType>
-		void make_print(NodeType* node, const Token& token); // a + b -----> print a + b (this is just for console)
+		// a o= n -----> a = a o n (o - operator)
+		void expand_argumented_assigments(BinarOpNode* node);
+
+		// a + b -----> print a + b (this is just for console)
+		void make_print(AstNode* node, const Token& token); 
  
 		ErrorHandler error_handler_;
 		std::vector<Variable> variables_;
