@@ -39,10 +39,11 @@ namespace kmsl
     void IoController::scroll(int amount, float t) // -amound down, amount up
     {
         int steps = 100;
-        float stepTime = t / steps;
+        float stepTime = std::max(t / steps, 0.01f);
         int scrollAmountPerStep = amount / steps;
 
         INPUT input;
+        ZeroMemory(&input, sizeof(INPUT));
         input.type = INPUT_MOUSE;
         input.mi.dx = 0;
         input.mi.dy = 0;
@@ -52,8 +53,9 @@ namespace kmsl
         {
             input.mi.mouseData = scrollAmountPerStep;
             SendInput(1, &input, sizeof(INPUT));
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(stepTime * 1000)));
+           
+            if (t != 0)
+                std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(stepTime * 1000)));
         }
 
         int remainingScroll = amount % steps;

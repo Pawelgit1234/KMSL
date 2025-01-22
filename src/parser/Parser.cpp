@@ -444,9 +444,9 @@ namespace kmsl
 			return std::make_unique<VariableNode>(current_token_);
 		else if (match({ TokenType::STATE, TokenType::READFILE,  TokenType::EXISTS, }).type != TokenType::INVALID)
 		{
-			Token stateToken = current_token_;
-			require({ TokenType::STRING });
-			return std::make_unique<UnarOpNode>(stateToken, std::make_unique<LiteralNode>(current_token_));
+			Token state_token = current_token_;
+			std::unique_ptr<AstNode> node = parseExpression();
+			return std::make_unique<UnarOpNode>(state_token, std::move(node));
 		}
 
 		error_handler_.report(ErrorType::SYNTAX_ERROR, "Expectet another value", current_token_.pos);

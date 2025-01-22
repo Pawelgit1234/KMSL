@@ -591,6 +591,13 @@ namespace kmsl
 			if (std::holds_alternative<std::string>(operand))
 			{
 				filename = std::get<std::string>(operand);
+
+				if (!isValidFileName(filename))
+				{
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' contains forbidden symbols", node->op.pos);
+					return variant();
+				}
+
 				std::ofstream file(filename);
 
 				if (!file.is_open())
@@ -609,6 +616,7 @@ namespace kmsl
 			if (std::holds_alternative<std::string>(operand))
 			{
 				filename = std::get<std::string>(operand);
+
 				if (std::filesystem::exists(filename))
 					std::filesystem::remove(filename);
 				else
@@ -659,6 +667,12 @@ namespace kmsl
 			if (std::holds_alternative<std::string>(operand))
 			{
 				dirname = std::get<std::string>(operand);
+				if (!isValidFileName(dirname))
+				{
+					error_handler_.report(ErrorType::RUNTIME_ERROR, "Dir '" + dirname + "' contains forbidden symbols", node->op.pos);
+					return variant();
+				}
+
 				std::filesystem::create_directory(dirname);
 			}
 			else
@@ -975,6 +989,7 @@ namespace kmsl
 				else
 					error_handler_.report(ErrorType::RUNTIME_ERROR, "The scroll parameter should be int", node->op.pos);
 			}
+			break;
 		}
 		case TokenType::WRITEFILE:
 		case TokenType::APPENDFILE:
@@ -993,6 +1008,18 @@ namespace kmsl
 			}
 			else
 				error_handler_.report(ErrorType::RUNTIME_ERROR, "Filename and text parameters should be string", node->op.pos);
+
+			if (!isValidFileName(filename))
+			{
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + filename + "' contains forbidden symbols", node->op.pos);
+				return variant();
+			}
+
+			if (!isValidFileName(second))
+			{
+				error_handler_.report(ErrorType::RUNTIME_ERROR, "File '" + second + "' contains forbidden symbols", node->op.pos);
+				return variant();
+			}
 
 			switch (node->op.type)
 			{
@@ -1277,5 +1304,11 @@ namespace kmsl
 	{
 		UnarOpNode printNode(Token(TokenType::PRINT, "print", token.pos), node->clone());
 		visit(&printNode);
+	}
+
+	bool Interpreter::isValidFileName(const std::string& name)
+	{
+		const std::string forbidden_symbols = "\\ / : * ? \" < > |";
+		return name.find_first_of(forbidden_symbols) == std::string::npos;
 	}
 }

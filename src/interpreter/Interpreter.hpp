@@ -66,6 +66,9 @@ namespace kmsl
 
 		// a + b -----> print a + b (this is just for console)
 		void make_print(AstNode* node, const Token& token); 
+
+		// checks file name
+		bool isValidFileName(const std::string& name);
  
 		ErrorHandler error_handler_;
 		std::vector<Variable> variables_;
