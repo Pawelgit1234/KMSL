@@ -1,0 +1,3 @@
+C:/Users/ellaw/source/repos/KMSL/build/CMakeFiles/KMSL.dir
+C:/Users/ellaw/source/repos/KMSL/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/ellaw/source/repos/KMSL/build/CMakeFiles/ZERO_CHECK.dir

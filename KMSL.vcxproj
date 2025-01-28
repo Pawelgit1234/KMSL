@@ -130,8 +130,54 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+<<<<<<< Updated upstream
 
   <ItemGroup></ItemGroup>
+=======
+  <ItemGroup>
+    <ClCompile Include="src\error\ErrorHandler.cpp" />
+    <ClCompile Include="src\io\IoController.cpp" />
+    <ClCompile Include="src\semantic\SemanticAnalyzer.cpp" />
+    <ClCompile Include="src\interpreter\Interpreter.cpp" />
+    <ClCompile Include="src\parser\Parser.cpp" />
+    <ClCompile Include="src\lexer\Lexer.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\token\TokenType.cpp" />
+    <ClCompile Include="src\interpreter\FileReader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\error\ErrorHandler.hpp" />
+    <ClInclude Include="src\AST\CommandNode.hpp" />
+    <ClInclude Include="src\io\IoController.hpp" />
+    <ClInclude Include="src\AST\KeyNode.hpp" />
+    <ClInclude Include="src\AST\MouseNode.hpp" />
+    <ClInclude Include="src\semantic\SemanticAnalyzer.hpp" />
+    <ClInclude Include="src\interpreter\Interpreter.hpp" />
+    <ClInclude Include="src\AST\ast.hpp" />
+    <ClInclude Include="src\AST\AstNode.hpp" />
+    <ClInclude Include="src\AST\BinarOpNode.hpp" />
+    <ClInclude Include="src\AST\BlockNode.hpp" />
+    <ClInclude Include="src\AST\ForNode.hpp" />
+    <ClInclude Include="src\AST\IfNode.hpp" />
+    <ClInclude Include="src\AST\LiteralNode.hpp" />
+    <ClInclude Include="src\AST\UnarOpNode.hpp" />
+    <ClInclude Include="src\AST\VariableNode.hpp" />
+    <ClInclude Include="src\AST\WhileNode.hpp" />
+    <ClInclude Include="src\parser\Parser.hpp" />
+    <ClInclude Include="src\lexer\Lexer.hpp" />
+    <ClInclude Include="src\token\Token.hpp" />
+    <ClInclude Include="src\token\TokenType.hpp" />
+    <ClInclude Include="src\interpreter\FileReader.hpp" />
+    <ClInclude Include="src\semantic\SymbolTable.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+    <Text Include="todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="KMSL_1.0.0_Doc.md" />
+  </ItemGroup>
+>>>>>>> Stashed changes
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
