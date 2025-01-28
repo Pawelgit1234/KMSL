@@ -118,4 +118,7 @@
     <Text Include="todo.txt" />
     <Text Include="CMakeLists.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="KMSL_1.0.0_Doc.md" />
+  </ItemGroup>
 </Project>
